@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -14,11 +17,13 @@ const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navLinks = [
-    { href: '#features', label: 'Features' },
+  const isHomePage = location.pathname === '/';
+
+  const navLinks = isHomePage ? [
+    { href: '#features', label: 'How It Works' },
     { href: '#testimonials', label: 'Testimonials' },
     { href: '#pricing', label: 'Pricing' },
-  ];
+  ] : [];
 
   return (
     <header
@@ -29,35 +34,37 @@ const Header = () => {
       <div className="container mx-auto px-6">
         <nav className="flex items-center justify-between h-20">
           {/* Logo */}
-          <a href="#" className="flex items-center gap-2 group">
+          <a href="/" className="flex items-center gap-2 group" onClick={(e) => { e.preventDefault(); navigate('/'); }}>
             <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">CS</span>
+              <span className="text-white font-bold text-sm">AI</span>
             </div>
             <span className="text-foreground font-semibold text-lg tracking-tight">
-              ContentSlave<span className="gradient-text">.ai</span>
+              AI<span className="gradient-text"> Scriptwriter</span>
             </span>
           </a>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="text-muted-foreground hover:text-foreground transition-colors duration-200 text-sm font-medium"
-              >
-                {link.label}
-              </a>
-            ))}
-          </div>
+          {isHomePage && (
+            <div className="hidden md:flex items-center gap-8">
+              {navLinks.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className="text-muted-foreground hover:text-foreground transition-colors duration-200 text-sm font-medium"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          )}
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
-            <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
-              Log In
-            </a>
-            <Button className="gradient-bg hover:opacity-90 transition-all duration-200 text-white font-medium px-6 glow-orange">
-              Get Started Free
+            <Button 
+              className="gradient-bg hover:opacity-90 transition-all duration-200 text-white font-medium px-6 glow-orange"
+              onClick={() => navigate('/create')}
+            >
+              Build My Script
             </Button>
           </div>
 
@@ -86,11 +93,11 @@ const Header = () => {
                 </a>
               ))}
               <div className="pt-4 border-t border-border flex flex-col gap-3">
-                <a href="#pricing" className="text-muted-foreground hover:text-foreground text-base font-medium py-2">
-                  Log In
-                </a>
-                <Button className="gradient-bg text-white font-medium w-full">
-                  Get Started Free
+                <Button 
+                  className="gradient-bg text-white font-medium w-full"
+                  onClick={() => { navigate('/create'); setIsMobileMenuOpen(false); }}
+                >
+                  Build My Script
                 </Button>
               </div>
             </div>

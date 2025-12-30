@@ -1,44 +1,44 @@
-import { Search, Users, Zap, Target, LineChart, Shield } from 'lucide-react';
+import { FileText, Zap, Target, TrendingUp, Clock, Sparkles } from 'lucide-react';
 
 const features = [
   {
-    icon: Search,
+    icon: FileText,
     number: '01',
-    title: 'AI Company Search',
-    subtitle: 'Plain English Search',
-    description: 'Just tell the AI which companies you want to target with your outreach – "Funded fintech companies with 100+ employees" or "CPG eCommerce brands hosted on Shopify" and get a list instantly.',
-  },
-  {
-    icon: Users,
-    number: '02',
-    title: 'Decision Maker Finder',
-    subtitle: 'Find the Right People',
-    description: 'Automatically identify and extract contact information for key decision-makers at your target companies. Get direct emails and LinkedIn profiles.',
+    title: 'Answer 5 Quick Questions',
+    subtitle: 'No research required',
+    description: 'Tell us your niche, audience, topic, and preferred style. We handle the rest—no links to paste, no content to scrape.',
   },
   {
     icon: Zap,
+    number: '02',
+    title: 'AI Generates Your Script',
+    subtitle: 'Expert-level writing',
+    description: 'Our AI crafts a complete script with proven hook formulas, retention patterns, and natural transitions that keep viewers watching.',
+  },
+  {
+    icon: Target,
     number: '03',
-    title: 'Instant Export',
-    subtitle: 'Ready-to-Use Data',
-    description: 'Export your leads directly to your favorite CRM or outreach tool. CSV, API, or direct integrations with HubSpot, Salesforce, and more.',
+    title: 'Ready to Record',
+    subtitle: 'Formatted & actionable',
+    description: 'Get a fully formatted script with timestamps, visual cues, and CTA placement—ready to film or send to your editor.',
   },
 ];
 
 const additionalFeatures = [
   {
-    icon: Target,
-    title: 'Hyper-Targeted Lists',
-    description: 'Build lists based on industry, company size, technology stack, funding stage, and more.',
+    icon: TrendingUp,
+    title: 'Retention-Optimized',
+    description: 'Every script uses proven patterns that keep viewers engaged from hook to CTA.',
   },
   {
-    icon: LineChart,
-    title: 'Real-Time Enrichment',
-    description: 'Get up-to-date company data enriched with the latest information from multiple sources.',
+    icon: Clock,
+    title: 'Any Video Length',
+    description: 'Short-form (60s), mid-length (2-4m), or long-form (6-10m)—we adapt the structure.',
   },
   {
-    icon: Shield,
-    title: 'Verified Contacts',
-    description: 'Every email is verified in real-time to ensure high deliverability and reduce bounces.',
+    icon: Sparkles,
+    title: 'Multiple Tones',
+    description: 'Educational, story-based, high-energy, or calm expert—match your brand voice.',
   },
 ];
 
@@ -52,13 +52,14 @@ const Features = () => {
         {/* Section Header */}
         <div className="max-w-3xl mx-auto text-center mb-20">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-6">
-            AI built{' '}
+            Scripts built{' '}
             <span className="font-display italic gradient-text">exclusively</span>
             <br />
-            for list building
+            for YouTube retention
           </h2>
           <p className="text-lg text-muted-foreground">
-            AI Company Search Finds Your Ideal Prospects – all from a Plain English Search. Think ChatGPT, but for building lead lists.
+            Stop staring at blank docs. Answer a few questions, get a complete script 
+            with hooks, structure, and CTAs built in.
           </p>
         </div>
 

@@ -1,7 +1,10 @@
-import { ArrowRight, Play, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 const Hero = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       {/* Background Effects */}
@@ -17,43 +20,43 @@ const Hero = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-secondary/50 backdrop-blur-sm mb-8 animate-fade-up opacity-0">
             <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm text-muted-foreground">AI-Powered Lead Generation</span>
+            <span className="text-sm text-muted-foreground">AI-Powered Script Generation</span>
           </div>
 
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6 animate-fade-up opacity-0 animation-delay-100">
-            Find Your Ideal Clients in Seconds with{' '}
+            AI Scriptwriter —{' '}
             <span className="font-display italic gradient-text text-shadow-glow">
-              AI Company Search
+              High-Retention Scripts
             </span>
+            {' '}in Minutes
           </h1>
 
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-up opacity-0 animation-delay-200">
-            Enter the type of companies you're looking for, and let AI build a hyper-targeted list for you. Think ChatGPT, but for building lead lists.
+            Answer a few quick questions about your video. Get a complete, 
+            expert-level YouTube script designed to hook viewers and keep them watching.
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12 animate-fade-up opacity-0 animation-delay-300">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8 animate-fade-up opacity-0 animation-delay-300">
             <Button 
               size="lg" 
               className="gradient-bg hover:opacity-90 transition-all duration-200 text-white font-semibold px-8 py-6 text-base glow-orange group"
+              onClick={() => navigate('/create')}
             >
-              Get 100 Free Leads
+              Build My Script
               <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="border-border hover:bg-secondary/50 text-foreground font-medium px-8 py-6 text-base group"
-            >
-              <Play className="mr-2 w-4 h-4" />
-              Watch Demo
             </Button>
           </div>
 
+          {/* Microcopy */}
+          <p className="text-sm text-muted-foreground animate-fade-up opacity-0 animation-delay-400">
+            No links. No scraping. Just answers → script.
+          </p>
+
           {/* Social Proof */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-muted-foreground animate-fade-up opacity-0 animation-delay-400">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-muted-foreground animate-fade-up opacity-0 animation-delay-500 mt-12">
             <div className="flex items-center gap-2">
               <div className="flex">
                 {[...Array(5)].map((_, i) => (
@@ -62,35 +65,39 @@ const Hero = () => {
                   </svg>
                 ))}
               </div>
-              <span>Rated Excellent – 4.8/5</span>
+              <span>Rated Excellent – 4.9/5</span>
             </div>
             <div className="hidden sm:block w-px h-4 bg-border" />
-            <span>Trusted by 10,000+ founders</span>
+            <span>5,000+ scripts generated</span>
           </div>
         </div>
 
-        {/* Floating UI Preview */}
-        <div className="mt-16 max-w-5xl mx-auto animate-fade-up opacity-0 animation-delay-500">
+        {/* Preview Card */}
+        <div className="mt-16 max-w-5xl mx-auto animate-fade-up opacity-0 animation-delay-600">
           <div className="relative rounded-2xl border border-border bg-card/50 backdrop-blur-sm p-6 shadow-2xl">
-            {/* Search Input Preview */}
+            {/* Script Preview */}
             <div className="bg-background rounded-xl border border-border p-4 mb-4">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 mb-3">
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <span className="text-muted-foreground">SEO agencies in New York with 50+ employees...</span>
+                <span className="text-sm text-muted-foreground font-mono">generating script...</span>
+              </div>
+              <div className="space-y-2 text-sm text-foreground/80">
+                <p className="font-semibold text-primary">[HOOK - 0:00]</p>
+                <p>"Most creators are making this one mistake that's killing their retention..."</p>
               </div>
             </div>
 
             {/* Example Tags */}
             <div className="flex flex-wrap gap-3 mb-6">
               {[
-                '💡 Cold email lead generation agencies',
-                '🎯 Fintech companies helping banks',
-                '🚀 Law firms specializing in injury cases',
-                '🏢 Consulting firms advising C-suite',
+                '🎯 Hook-optimized intros',
+                '📈 Retention-focused structure',
+                '🎬 Ready-to-record format',
+                '⚡ 2-minute generation',
               ].map((tag, i) => (
                 <div
                   key={i}
-                  className="px-4 py-2 rounded-full border border-border bg-secondary/30 text-sm text-foreground hover:border-primary/50 transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-full border border-border bg-secondary/30 text-sm text-foreground"
                 >
                   {tag}
                 </div>
@@ -99,8 +106,8 @@ const Hero = () => {
 
             {/* CTA in Preview */}
             <div className="flex justify-end">
-              <Button className="gradient-bg text-white font-medium">
-                Get 100 Free Leads
+              <Button className="gradient-bg text-white font-medium" onClick={() => navigate('/create')}>
+                Generate Script
               </Button>
             </div>
 

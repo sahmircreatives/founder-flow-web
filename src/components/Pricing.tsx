@@ -5,47 +5,47 @@ import { Button } from '@/components/ui/button';
 const plans = [
   {
     name: 'Starter',
-    description: 'Perfect for solo founders getting started',
-    monthlyPrice: 49,
-    yearlyPrice: 39,
+    description: 'Perfect for solo creators getting started',
+    monthlyPrice: 29,
+    yearlyPrice: 19,
     features: [
-      '500 leads per month',
-      'AI Company Search',
-      'Basic filters',
-      'CSV export',
+      '10 scripts per month',
+      'All video lengths',
+      'Basic tone options',
+      'Copy-paste export',
       'Email support',
     ],
     cta: 'Start Free Trial',
     popular: false,
   },
   {
-    name: 'Growth',
-    description: 'For growing teams and agencies',
-    monthlyPrice: 149,
-    yearlyPrice: 119,
+    name: 'Creator',
+    description: 'For active YouTubers and content teams',
+    monthlyPrice: 79,
+    yearlyPrice: 59,
     features: [
-      '2,500 leads per month',
-      'Advanced AI Search',
-      'Decision maker finder',
-      'CRM integrations',
-      'Verified emails',
+      '50 scripts per month',
+      'All tones & styles',
+      'Hook variations',
+      'Retention timestamps',
       'Priority support',
+      'Script history',
     ],
     cta: 'Start Free Trial',
     popular: true,
   },
   {
-    name: 'Scale',
-    description: 'For high-volume lead generation',
-    monthlyPrice: 399,
-    yearlyPrice: 319,
+    name: 'Agency',
+    description: 'For teams managing multiple channels',
+    monthlyPrice: 199,
+    yearlyPrice: 149,
     features: [
-      '10,000 leads per month',
-      'Everything in Growth',
+      'Unlimited scripts',
+      'Everything in Creator',
+      'Team access (5 seats)',
+      'Brand voice presets',
       'API access',
-      'Custom enrichment',
-      'Dedicated account manager',
-      'Custom integrations',
+      'Dedicated support',
     ],
     cta: 'Start Free Trial',
     popular: false,
@@ -71,7 +71,7 @@ const Pricing = () => {
             {' '}pricing
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
-            Start free, scale as you grow. No hidden fees.
+            Start free, upgrade when you need more scripts.
           </p>
 
           {/* Billing Toggle */}
@@ -92,7 +92,7 @@ const Pricing = () => {
             >
               Yearly
               <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                Save 20%
+                Save 25%
               </span>
             </button>
           </div>
@@ -175,10 +175,10 @@ const Pricing = () => {
             <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
               <div>
                 <h3 className="text-2xl font-bold text-foreground mb-2">
-                  Need a custom solution?
+                  Need custom volume or features?
                 </h3>
                 <p className="text-muted-foreground">
-                  Get a done-with-you installed offer tailored to your business needs.
+                  Contact us for enterprise pricing and white-label solutions.
                 </p>
               </div>
               <Button 

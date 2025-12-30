@@ -2,51 +2,51 @@ import { Star, Quote } from 'lucide-react';
 
 const testimonials = [
   {
-    name: 'Sarah Chen',
-    role: 'CEO',
-    company: 'GrowthLab Agency',
-    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=faces',
-    content: 'ContentSlave.ai completely transformed how we acquire clients. We went from cold outreach to having qualified leads come to us. The ROI has been incredible.',
+    name: 'Marcus Lee',
+    role: 'YouTuber',
+    company: '850K subscribers',
+    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=faces',
+    content: 'I used to spend 4+ hours writing scripts. Now I answer 5 questions and have a draft in 2 minutes. My retention has actually improved.',
     rating: 5,
   },
   {
-    name: 'Marcus Johnson',
+    name: 'Sarah Chen',
+    role: 'Content Strategist',
+    company: 'Agency Owner',
+    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=faces',
+    content: 'We use this for all our client scripts now. The hook formulas alone are worth it—we\'ve seen 20% higher average view duration.',
+    rating: 5,
+  },
+  {
+    name: 'Jake Morrison',
     role: 'Founder',
-    company: 'SaaS Ventures',
-    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=faces',
-    content: 'The AI-powered search is incredibly accurate. I describe my ideal customer in plain English, and it finds exactly the companies I need. Game changer.',
+    company: 'Tech Review Channel',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces',
+    content: 'Finally, a script tool that understands YouTube. The structure it generates is exactly what high-retention videos need.',
     rating: 5,
   },
   {
     name: 'Emily Rodriguez',
-    role: 'VP of Sales',
-    company: 'TechScale Inc',
+    role: 'Video Producer',
+    company: 'Freelance',
     image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=faces',
-    content: 'We reduced our lead research time by 80%. What used to take our team hours now takes minutes. The quality of leads has also improved significantly.',
+    content: 'The ready-to-record format saves me so much time. Timestamps, visual cues, everything is there. I just hit record.',
     rating: 5,
   },
   {
     name: 'David Park',
-    role: 'Growth Lead',
-    company: 'Fintech Solutions',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces',
-    content: 'The verified contact data alone is worth the investment. Our email deliverability went up 40% and response rates doubled.',
+    role: 'Course Creator',
+    company: 'EduTech Founder',
+    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces',
+    content: 'I create 3-4 videos a week for my course. This tool cut my scripting time by 80%. The quality is consistently professional.',
     rating: 5,
   },
   {
     name: 'Lisa Thompson',
-    role: 'Director',
-    company: 'Marketing Pro',
+    role: 'Marketing Director',
+    company: 'SaaS Startup',
     image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces',
-    content: 'Finally, a lead generation tool that actually understands what I\'m looking for. The natural language search feels like magic.',
-    rating: 5,
-  },
-  {
-    name: 'Alex Kim',
-    role: 'Co-Founder',
-    company: 'StartupX',
-    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces',
-    content: 'As a startup, every dollar counts. ContentSlave.ai gave us enterprise-level lead data at a fraction of the cost. Highly recommend.',
+    content: 'We needed YouTube content fast. This gave us expert-level scripts without hiring a scriptwriter. ROI was immediate.',
     rating: 5,
   },
 ];
@@ -63,11 +63,11 @@ const Testimonials = () => {
           <p className="text-primary font-medium mb-4">Testimonials</p>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-6">
             Loved by{' '}
-            <span className="font-display italic gradient-text">10,000+</span>
-            {' '}founders
+            <span className="font-display italic gradient-text">creators</span>
+            {' '}worldwide
           </h2>
           <p className="text-lg text-muted-foreground">
-            See what industry leaders are saying about ContentSlave.ai
+            See what YouTubers and content teams are saying about AI Scriptwriter
           </p>
         </div>
 
@@ -110,15 +110,6 @@ const Testimonials = () => {
 
               {/* Hover Effect */}
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity -z-10" />
-            </div>
-          ))}
-        </div>
-
-        {/* Trust Badges */}
-        <div className="mt-16 flex flex-wrap items-center justify-center gap-8 opacity-60">
-          {['Trustpilot', 'G2', 'Capterra', 'ProductHunt'].map((badge, i) => (
-            <div key={i} className="text-muted-foreground font-medium text-lg">
-              {badge}
             </div>
           ))}
         </div>
