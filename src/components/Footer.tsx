@@ -1,28 +1,24 @@
-import { Youtube, Twitter, Linkedin, Instagram } from 'lucide-react';
+import { Youtube, Twitter, Linkedin } from 'lucide-react';
 
 const footerLinks = {
   product: [
-    { label: 'Features', href: '#features' },
+    { label: 'How It Works', href: '#features' },
     { label: 'Pricing', href: '#pricing' },
-    { label: 'Integrations', href: '#' },
-    { label: 'API', href: '#' },
+    { label: 'Examples', href: '#' },
   ],
   company: [
     { label: 'About', href: '#' },
     { label: 'Blog', href: '#' },
-    { label: 'Careers', href: '#' },
     { label: 'Contact', href: '#' },
   ],
   resources: [
-    { label: 'Documentation', href: '#' },
     { label: 'Help Center', href: '#' },
-    { label: 'Status', href: '#' },
-    { label: 'Changelog', href: '#' },
+    { label: 'Script Templates', href: '#' },
+    { label: 'YouTube Tips', href: '#' },
   ],
   legal: [
     { label: 'Privacy', href: '#' },
     { label: 'Terms', href: '#' },
-    { label: 'GDPR', href: '#' },
   ],
 };
 
@@ -30,7 +26,6 @@ const socialLinks = [
   { icon: Twitter, href: '#', label: 'Twitter' },
   { icon: Linkedin, href: '#', label: 'LinkedIn' },
   { icon: Youtube, href: '#', label: 'YouTube' },
-  { icon: Instagram, href: '#', label: 'Instagram' },
 ];
 
 const Footer = () => {
@@ -42,14 +37,14 @@ const Footer = () => {
           <div className="col-span-2">
             <a href="#" className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">CS</span>
+                <span className="text-white font-bold text-sm">AI</span>
               </div>
               <span className="text-foreground font-semibold text-lg tracking-tight">
-                ContentSlave<span className="gradient-text">.ai</span>
+                AI<span className="gradient-text"> Scriptwriter</span>
               </span>
             </a>
             <p className="text-muted-foreground text-sm leading-relaxed mb-6 max-w-xs">
-              Scalable YouTube systems that turn content into qualified inbound leads for high-earning founders.
+              Generate high-retention YouTube scripts in minutes. Answer questions, get expert-level scripts.
             </p>
             {/* Social Links */}
             <div className="flex gap-4">
@@ -123,12 +118,11 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © 2025 contentslave.ai. All rights reserved.
+            © 2025 AI Scriptwriter. All rights reserved.
           </p>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
             <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
             <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-foreground transition-colors">Cookie Policy</a>
           </div>
         </div>
       </div>
