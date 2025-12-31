@@ -67,8 +67,8 @@ const initialBusinessContext: BusinessContext = {
     },
     vsl_specifications: {
       target_length: {
-        minutes: 10,
-        range: '45-60',
+        minutes: 5,
+        range: '5-6m',
       },
     },
   },
@@ -225,7 +225,7 @@ export const useScriptWizard = () => {
     }));
   }, []);
 
-  const updateVslSpecs = useCallback((minutes: number, range: '30-45' | '45-60' | '60-75' | '75-90') => {
+  const updateVslSpecs = useCallback((minutes: number, range: '15-60s' | '5-6m' | '8-15m' | '20-30m') => {
     setBusinessContext(prev => ({
       ...prev,
       vsl_context: {

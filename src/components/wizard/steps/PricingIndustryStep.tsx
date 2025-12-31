@@ -10,7 +10,7 @@ interface PricingIndustryStepProps {
   vslSpecs: BusinessContext['vsl_context']['vsl_specifications'];
   onUpdatePricing: (field: keyof BusinessContext['vsl_context']['pricing'], value: any) => void;
   onUpdateIndustry: (field: keyof BusinessContext['vsl_context']['industry_niche'], value: string) => void;
-  onUpdateVslSpecs: (minutes: number, range: '30-45' | '45-60' | '60-75' | '75-90') => void;
+  onUpdateVslSpecs: (minutes: number, range: '15-60s' | '5-6m' | '8-15m' | '20-30m') => void;
 }
 
 const paymentStructures = [
@@ -34,10 +34,10 @@ const marketMaturity = [
 ];
 
 const lengthRanges = [
-  { value: '30-45', label: '30-45 min', desc: 'Short' },
-  { value: '45-60', label: '45-60 min', desc: 'Standard' },
-  { value: '60-75', label: '60-75 min', desc: 'Detailed' },
-  { value: '75-90', label: '75-90 min', desc: 'Long' },
+  { value: '15-60s', label: '15-60 sec', desc: 'Short' },
+  { value: '5-6m', label: '5-6 min', desc: 'Standard' },
+  { value: '8-15m', label: '8-15 min', desc: 'Detailed' },
+  { value: '20-30m', label: '20-30 min', desc: 'Long' },
 ];
 
 const PricingIndustryStep = ({
@@ -242,7 +242,10 @@ const PricingIndustryStep = ({
             {lengthRanges.map((lr) => (
               <button
                 key={lr.value}
-                onClick={() => onUpdateVslSpecs(Number(lr.value.split('-')[0]), lr.value as any)}
+                onClick={() => {
+                  const mins = lr.value === '15-60s' ? 1 : lr.value === '5-6m' ? 5 : lr.value === '8-15m' ? 10 : 25;
+                  onUpdateVslSpecs(mins, lr.value as any);
+                }}
                 className={`p-3 rounded-xl border text-left transition-all ${
                   vslSpecs.target_length.range === lr.value
                     ? 'border-primary bg-primary/10 text-foreground'
