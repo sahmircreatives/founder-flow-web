@@ -6,6 +6,8 @@ import { BusinessContext } from '@/types/scriptGenerator';
 
 interface ProductServiceStepProps {
   data: BusinessContext['vsl_context']['product_service'];
+  videoTitle: string;
+  onUpdateTitle: (title: string) => void;
   onUpdate: (field: keyof BusinessContext['vsl_context']['product_service'], value: string) => void;
 }
 
@@ -17,15 +19,29 @@ const offerTypes = [
   { value: 'product', label: 'Product', desc: 'Physical or digital products' },
 ];
 
-const ProductServiceStep = ({ data, onUpdate }: ProductServiceStepProps) => {
+const ProductServiceStep = ({ data, videoTitle, onUpdateTitle, onUpdate }: ProductServiceStepProps) => {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-xl font-semibold text-foreground mb-2">Your Offer</h3>
-        <p className="text-muted-foreground text-sm">Tell us about what you're selling.</p>
+        <h3 className="text-xl font-semibold text-foreground mb-2">Your Video</h3>
+        <p className="text-muted-foreground text-sm">Start with your video title, then tell us about your offer.</p>
       </div>
 
       <div className="space-y-5">
+        <div>
+          <Label htmlFor="videoTitle" className="text-sm font-medium text-foreground mb-2 block">
+            What's your video title?
+          </Label>
+          <Input
+            id="videoTitle"
+            placeholder="e.g., How I Made $100K in 90 Days Using This Simple System..."
+            value={videoTitle}
+            onChange={(e) => onUpdateTitle(e.target.value)}
+            className="bg-secondary/50 border-border text-foreground placeholder:text-muted-foreground"
+          />
+          <p className="text-xs text-muted-foreground mt-1">This will be the title of your YouTube video</p>
+        </div>
+
         <div>
           <Label htmlFor="offerName" className="text-sm font-medium text-foreground mb-2 block">
             What's your offer name?

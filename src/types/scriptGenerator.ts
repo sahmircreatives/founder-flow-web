@@ -1,5 +1,6 @@
 // Business Context JSON Structure
 export interface BusinessContext {
+  video_title: string;
   vsl_context: {
     product_service: {
       name: string;

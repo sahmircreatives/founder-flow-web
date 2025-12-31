@@ -44,10 +44,14 @@ serve(async (req) => {
     }
 
     const vsl = business.vsl_context;
+    const videoTitle = business.video_title || "Untitled Video";
     const targetMinutes = vsl.vsl_specifications?.target_length?.minutes || 10;
 
     // Build the mega prompt
     const megaPrompt = `${SCRIPT_FRAMEWORK}
+
+=== VIDEO TITLE ===
+"${videoTitle}"
 
 === BUSINESS CONTEXT ===
 Product/Service: ${vsl.product_service.name} (${vsl.product_service.type})
@@ -101,14 +105,15 @@ Content Examples for Voice Matching:
 ${voice.tweet_examples || "No examples provided"}
 
 === INSTRUCTIONS ===
-Write a ${targetMinutes}-minute YouTube script (variation ${variation}) that:
-1. Opens with a powerful hook that creates genuine curiosity
-2. Establishes credibility within the first 60 seconds
-3. Agitates the core problem with specific, emotional language
-4. Presents the solution framework clearly
-5. Delivers massive value with specific examples
-6. Handles objections naturally
-7. Ends with a clear, compelling CTA
+Write a ${targetMinutes}-minute YouTube script for the video titled "${videoTitle}" (variation ${variation}) that:
+1. Uses the exact title provided - do NOT create a new title
+2. Opens with a powerful hook that creates genuine curiosity
+3. Establishes credibility within the first 60 seconds
+4. Agitates the core problem with specific, emotional language
+5. Presents the solution framework clearly
+6. Delivers massive value with specific examples
+7. Handles objections naturally
+8. Ends with a clear, compelling CTA
 
 Match the voice and tone from the examples provided. Use the "do phrases" naturally and avoid the "don't phrases".`;
 

@@ -3,6 +3,7 @@ import { BusinessContext, VoiceData } from '@/types/scriptGenerator';
 
 // Initial empty state for business context
 const initialBusinessContext: BusinessContext = {
+  video_title: '',
   vsl_context: {
     product_service: {
       name: '',
@@ -87,6 +88,13 @@ export const useScriptWizard = () => {
 
   // Total steps: Business sections (1-5) + Voice Data (6) + Review (7)
   const totalSteps = 7;
+
+  const updateVideoTitle = useCallback((title: string) => {
+    setBusinessContext(prev => ({
+      ...prev,
+      video_title: title,
+    }));
+  }, []);
 
   const updateProductService = useCallback((field: keyof BusinessContext['vsl_context']['product_service'], value: string) => {
     setBusinessContext(prev => ({
@@ -265,6 +273,7 @@ export const useScriptWizard = () => {
     totalSteps,
     businessContext,
     voiceData,
+    updateVideoTitle,
     updateProductService,
     updateDemographics,
     updatePsychographics,

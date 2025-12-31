@@ -35,6 +35,7 @@ const CreateScript = () => {
     totalSteps,
     businessContext,
     voiceData,
+    updateVideoTitle,
     updateProductService,
     updateDemographics,
     updatePsychographics,
@@ -86,7 +87,14 @@ const CreateScript = () => {
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <ProductServiceStep data={businessContext.vsl_context.product_service} onUpdate={updateProductService} />;
+        return (
+          <ProductServiceStep
+            data={businessContext.vsl_context.product_service}
+            videoTitle={businessContext.video_title}
+            onUpdateTitle={updateVideoTitle}
+            onUpdate={updateProductService}
+          />
+        );
       case 2:
         return (
           <TargetAudienceStep
