@@ -5,32 +5,30 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SCRIPT_FRAMEWORK = `You are writing a direct response YouTube script for online business owners (course creators, info product sellers, coaches).
+const SCRIPT_FRAMEWORK = `You are an expert YouTube script writer specializing in high-converting business content.
 
-Use the context files provided to tailor the script specifically to the user's ICP (Ideal Customer Profile).
+SCRIPT STRUCTURE:
+1. HOOK (First 15-30 seconds) - Pattern interrupt, bold promise, or contrarian statement
+2. CREDIBILITY (30-60 seconds) - Brief proof of concept, relevant experience
+3. PROBLEM FRAMING (1-2 minutes) - Common mistake, why it fails, hidden cost
+4. SOLUTION OVERVIEW (30-60 seconds) - Introduce method, give it a name, contrast with failed approach
+5. DEEP DIVE / VALUE (8-12 minutes) - Sequential system with 3-5 steps, specific examples
+6. PROOF & VALIDATION - Woven throughout with client results, personal results
+7. OBJECTION HANDLING - Address naturally: "Now you might be thinking..."
+8. CTA (Last 30-60 seconds) - Recap value, what to do next, why now
 
-SCRIPT FRAMEWORK OUTLINE:
-1. HOOK - Open with a pattern interrupt, bold claim, or contrarian statement that stops the scroll
-2. CREDIBILITY - Briefly establish why they should listen to you
-3. PROBLEM - Agitate the core problem with specificity and emotion
-4. SOLUTION - Introduce your framework/method with a clear name
-5. VALUE DELIVERY - Walk through 3-5 actionable steps with specific examples
-6. PROOF - Weave in results, case studies, or personal experience
-7. OBJECTION HANDLING - Address doubts naturally in the flow
-8. CTA - Clear next step with urgency
+WRITING PRINCIPLES:
+- Conversational but authoritative
+- No fluff - every sentence advances the narrative
+- Specific over generic - use numbers, names, examples
+- Write how you speak, not essay format
+- Include verbal transitions: "Now...", "But here's the thing..."
+- Mark emphasis points with [EMPHASIS] and visual cues with [VISUAL CUE]
 
-CRITICAL RULES:
-- Write ONLY the spoken script - no visual cues, no production notes, no [BRACKETS]
-- Conversational tone - write how you actually speak
-- Every sentence must advance the narrative - zero fluff
-- Be specific: use numbers, names, real examples
-- Use verbal transitions: "Here's the thing...", "Now...", "But wait..."
-- Match the voice/tone from the examples provided
-
-OUTPUT FORMAT:
-- Start with the framework outline (numbered sections with brief descriptions)
-- Then write the full script with section headers and timestamps based on target length
-- Do NOT include any visual directions, camera notes, or production cues`;
+FORMAT OUTPUT AS:
+- Include timestamps based on target length
+- Use clear section headers
+- Include production notes at the end`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -107,17 +105,17 @@ Content Examples for Voice Matching:
 ${voice.tweet_examples || "No examples provided"}
 
 === INSTRUCTIONS ===
-Write a ${targetMinutes}-minute direct response YouTube script for the video titled "${videoTitle}" (variation ${variation}).
+Write a ${targetMinutes}-minute YouTube script for the video titled "${videoTitle}" (variation ${variation}) that:
+1. Uses the exact title provided - do NOT create a new title
+2. Opens with a powerful hook that creates genuine curiosity
+3. Establishes credibility within the first 60 seconds
+4. Agitates the core problem with specific, emotional language
+5. Presents the solution framework clearly
+6. Delivers massive value with specific examples
+7. Handles objections naturally
+8. Ends with a clear, compelling CTA
 
-Requirements:
-1. Use the exact title provided - do NOT create a new title
-2. First, output the FRAMEWORK OUTLINE showing your planned structure
-3. Then write the FULL SCRIPT with timestamps and section headers
-4. Reference the ICP context above to make the script highly specific and tailored
-5. Match the voice and tone from the examples provided
-6. Use the "do phrases" naturally and avoid the "don't phrases"
-7. Write ONLY the spoken words - no visual cues, no brackets, no production notes
-8. Be direct, specific, and conversion-focused`;
+Match the voice and tone from the examples provided. Use the "do phrases" naturally and avoid the "don't phrases".`;
 
     console.log("Calling Anthropic API with claude-opus-4-5-20251101...");
     
@@ -131,7 +129,7 @@ Requirements:
       body: JSON.stringify({
         model: "claude-opus-4-5-20251101",
         max_tokens: 8000,
-        system: "You are a direct response YouTube scriptwriter for online business owners. You write conversion-focused scripts without any visual cues, production notes, or bracketed instructions. Output only the spoken script with section headers and timestamps.",
+        system: "You are an expert YouTube scriptwriter who creates high-retention, conversion-focused scripts.",
         messages: [
           { role: "user", content: megaPrompt },
         ],
