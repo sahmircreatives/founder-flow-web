@@ -34,10 +34,10 @@ const marketMaturity = [
 ];
 
 const lengthRanges = [
-  { value: '30-45', label: '30-45 min', desc: 'Short VSL' },
+  { value: '30-45', label: '30-45 min', desc: 'Short' },
   { value: '45-60', label: '45-60 min', desc: 'Standard' },
   { value: '60-75', label: '60-75 min', desc: 'Detailed' },
-  { value: '75-90', label: '75-90 min', desc: 'Long-form' },
+  { value: '75-90', label: '75-90 min', desc: 'Long' },
 ];
 
 const PricingIndustryStep = ({
@@ -237,7 +237,7 @@ const PricingIndustryStep = ({
 
         {/* VSL Specs */}
         <div>
-          <Label className="text-sm font-medium text-foreground mb-3 block">Target VSL Length</Label>
+          <Label className="text-sm font-medium text-foreground mb-3 block">Target Script Length</Label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {lengthRanges.map((lr) => (
               <button
