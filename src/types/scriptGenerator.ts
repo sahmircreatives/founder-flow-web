@@ -65,7 +65,7 @@ export interface BusinessContext {
     vsl_specifications: {
       target_length: {
         minutes: number;
-        range: '30-45' | '45-60' | '60-75' | '75-90';
+        range: '15-60s' | '5-6m' | '8-15m' | '20-30m';
       };
     };
   };
