@@ -5,21 +5,28 @@ const BookingSection = () => {
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       
       <div className="container mx-auto px-6 relative z-10">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Ready to scale your content?
+        <div className="max-w-5xl mx-auto text-center">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 mb-6">
+            <span className="px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-medium">
+              It's Free
+            </span>
+            <span className="text-muted-foreground text-sm">Book a Call</span>
+          </div>
+
+          {/* Heading */}
+          <h2 className="text-4xl md:text-5xl font-bold mb-12">
+            Book a <span className="italic font-normal">Free Call</span>
           </h2>
-          <p className="text-lg text-muted-foreground mb-8">
-            Book a free strategy call and discover how AI agents can 3x your content output.
-          </p>
-          <a
-            href="https://cal.com/sahmircreatives/secret"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white rounded-md gradient-bg hover:opacity-90 transition-all duration-200 glow-orange"
-          >
-            Book Your Free Call
-          </a>
+
+          {/* Cal.com Embed */}
+          <div className="rounded-2xl overflow-hidden border border-border bg-card/50 backdrop-blur-sm">
+            <iframe
+              src="https://cal.com/sahmircreatives/secret?embed=true&theme=dark"
+              className="w-full h-[700px] border-0"
+              title="Book a call with Sahmir Creatives"
+            />
+          </div>
         </div>
       </div>
     </section>
