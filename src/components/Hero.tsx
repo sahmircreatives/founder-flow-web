@@ -23,7 +23,7 @@ const Hero = () => {
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6 animate-fade-up opacity-0 animation-delay-100">
             Produce 3x more content{' '}
-            <span className="gradient-text font-sans">for 1/3 the cost </span>
+            <span className="gradient-text font-instrument-serif italic">for 1/3 the cost </span>
           </h1>
 
           {/* Subheadline */}
@@ -61,7 +61,7 @@ const Hero = () => {
               <span>Trusted by 500+ creators</span>
             </div>
             <div className="hidden sm:block w-px h-4 bg-border" />
-            <span>7,00+ scripts generated</span>
+            <span>7,000+ scripts generated</span>
           </div>
         </div>
 
