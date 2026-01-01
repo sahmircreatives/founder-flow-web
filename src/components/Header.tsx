@@ -61,7 +61,7 @@ const Header = () => {
               className="gradient-bg hover:opacity-90 transition-all duration-200 text-white font-medium px-6 glow-orange"
               onClick={() => navigate('/create')}
             >
-              Build My Script
+              Get Your Slave
             </Button>
           </div>
 
@@ -94,7 +94,7 @@ const Header = () => {
                   className="gradient-bg text-white font-medium w-full"
                   onClick={() => { navigate('/create'); setIsMobileMenuOpen(false); }}
                 >
-                  Build My Script
+                  Get Your Slave
                 </Button>
               </div>
             </div>
