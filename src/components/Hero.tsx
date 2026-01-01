@@ -106,7 +106,7 @@ const Hero = () => {
             {/* CTA in Preview */}
             <div className="flex justify-end">
               <Button className="gradient-bg text-white font-medium" onClick={() => navigate('/create')}>
-                Generate Script
+                Get Your Free Youtube Script
               </Button>
             </div>
 
