@@ -19,16 +19,19 @@ const ScriptResult = () => {
   const { script, businessContext, voiceData } = location.state || {};
   const [currentScript, setCurrentScript] = useState(script || '');
 
-  // Show modal on initial load when script exists
+  // Show modal a few seconds after script is displayed
   useEffect(() => {
-    if (script) {
-      setShowModal(true);
-      const timer = setTimeout(() => {
-        setShowCloseButton(true);
-      }, 3000);
-      return () => clearTimeout(timer);
+    if (script && !isLoading) {
+      const showTimer = setTimeout(() => {
+        setShowModal(true);
+        // Show close button 3 seconds after modal appears
+        setTimeout(() => {
+          setShowCloseButton(true);
+        }, 3000);
+      }, 3000); // Wait 3 seconds before showing modal
+      return () => clearTimeout(showTimer);
     }
-  }, [script]);
+  }, [script, isLoading]);
 
   if (!script && !currentScript) {
     navigate('/create');
