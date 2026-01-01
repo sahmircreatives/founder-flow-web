@@ -36,7 +36,7 @@ const faqs = [
   },
   {
     question: "Do I need to be on camera / be a good speaker for this to work?",
-    answer: "No. You can use a teleprompter. The key is clarity + value."
+    answer: "Most people struggle with this. You can use a teleprompter. The key is clarity + value. That's why we also offer coaching calls to help improve your delivery."
   },
   {
     question: "How much does it cost, what's included, and what's the next step to start?",
