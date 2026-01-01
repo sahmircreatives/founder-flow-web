@@ -62,53 +62,72 @@ const benefits = [
   },
 ];
 
-// Animated AI Worker component
-const AnimatedWorker = ({ 
-  delay, 
-  duration, 
-  className, 
+// Orbital Worker component
+const OrbitalWorker = ({ 
   icon: Icon,
-  color = 'primary'
+  orbitRadius,
+  duration,
+  delay,
+  reverse = false,
+  size = 'md'
 }: { 
-  delay: number; 
-  duration: number; 
-  className: string;
   icon: React.ElementType;
-  color?: string;
-}) => (
-  <div 
-    className={`absolute ${className}`}
-    style={{
-      animation: `float ${duration}s ease-in-out infinite`,
-      animationDelay: `${delay}s`,
-    }}
-  >
-    <div className={`relative w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center backdrop-blur-sm`}>
-      <Icon className="w-6 h-6 text-primary" />
-      {/* Pulse ring */}
-      <div 
-        className="absolute inset-0 rounded-xl border border-primary/50"
+  orbitRadius: number;
+  duration: number;
+  delay: number;
+  reverse?: boolean;
+  size?: 'sm' | 'md' | 'lg';
+}) => {
+  const sizeClasses = {
+    sm: 'w-8 h-8',
+    md: 'w-12 h-12',
+    lg: 'w-14 h-14'
+  };
+  const iconSizes = {
+    sm: 'w-4 h-4',
+    md: 'w-6 h-6',
+    lg: 'w-7 h-7'
+  };
+
+  return (
+    <div 
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+      style={{
+        ['--orbit-radius' as string]: `${orbitRadius}px`,
+        animation: `${reverse ? 'orbit-reverse' : 'orbit'} ${duration}s linear infinite`,
+        animationDelay: `${delay}s`,
+      }}
+    >
+      <div className={`relative ${sizeClasses[size]} rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/40 flex items-center justify-center backdrop-blur-sm shadow-lg`}
         style={{
-          animation: `pulse-ring 2s ease-out infinite`,
+          animation: `orbit-pulse 3s ease-in-out infinite`,
           animationDelay: `${delay}s`,
         }}
-      />
+      >
+        <Icon className={`${iconSizes[size]} text-primary`} />
+        {/* Glow effect */}
+        <div className="absolute inset-0 rounded-xl bg-primary/20 blur-md -z-10" />
+      </div>
     </div>
-    {/* Connection line */}
-    <div 
-      className="absolute top-1/2 left-1/2 w-20 h-px bg-gradient-to-r from-primary/30 to-transparent"
-      style={{
-        transform: 'rotate(45deg)',
-        transformOrigin: 'left center',
-      }}
-    />
-  </div>
+  );
+};
+
+// Orbit ring visualization
+const OrbitRing = ({ radius, opacity = 0.2 }: { radius: number; opacity?: number }) => (
+  <div 
+    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary pointer-events-none"
+    style={{
+      width: radius * 2,
+      height: radius * 2,
+      opacity,
+    }}
+  />
 );
 
 // Floating particles
 const FloatingParticle = ({ delay, x, y }: { delay: number; x: string; y: string }) => (
   <div 
-    className="absolute w-1 h-1 rounded-full bg-primary/40"
+    className="absolute w-1.5 h-1.5 rounded-full bg-primary/50"
     style={{
       left: x,
       top: y,
@@ -116,6 +135,21 @@ const FloatingParticle = ({ delay, x, y }: { delay: number; x: string; y: string
       animationDelay: `${delay}s`,
     }}
   />
+);
+
+// Central hub component
+const CentralHub = () => (
+  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+    <div className="w-3 h-3 rounded-full bg-background" />
+    <div 
+      className="absolute inset-0 rounded-full border-2 border-primary/50"
+      style={{ animation: 'pulse-ring 2s ease-out infinite' }}
+    />
+    <div 
+      className="absolute inset-0 rounded-full border border-primary/30"
+      style={{ animation: 'pulse-ring 2s ease-out infinite 0.5s' }}
+    />
+  </div>
 );
 
 const Features = () => {
@@ -197,37 +231,41 @@ const Features = () => {
           </div>
         </div>
 
-        {/* Full Team Section Header with Animated Workers */}
-        <div className="relative max-w-3xl mx-auto text-center mb-16">
-          {/* Animated AI Workers floating around */}
-          <div className="absolute inset-0 -inset-x-32 hidden md:block pointer-events-none">
-            <AnimatedWorker delay={0} duration={4} className="top-0 left-0" icon={PenTool} />
-            <AnimatedWorker delay={0.5} duration={5} className="top-12 right-4" icon={Image} />
-            <AnimatedWorker delay={1} duration={4.5} className="bottom-8 left-8" icon={Film} />
-            <AnimatedWorker delay={1.5} duration={5.5} className="bottom-0 right-12" icon={Bot} />
+        {/* Full Team Section Header with Orbital Workers */}
+        <div className="relative max-w-3xl mx-auto text-center mb-16 py-8">
+          {/* Orbital Animation Container */}
+          <div className="absolute inset-0 hidden md:flex items-center justify-center pointer-events-none" style={{ height: '280px', top: '50%', transform: 'translateY(-50%)' }}>
+            {/* Orbit rings */}
+            <OrbitRing radius={90} opacity={0.15} />
+            <OrbitRing radius={140} opacity={0.1} />
+            <OrbitRing radius={190} opacity={0.08} />
+            
+            {/* Central hub */}
+            <CentralHub />
+            
+            {/* Orbiting workers - inner ring */}
+            <OrbitalWorker icon={PenTool} orbitRadius={90} duration={12} delay={0} size="md" />
+            <OrbitalWorker icon={Bot} orbitRadius={90} duration={12} delay={3} size="md" />
+            <OrbitalWorker icon={Image} orbitRadius={90} duration={12} delay={6} size="md" />
+            <OrbitalWorker icon={Zap} orbitRadius={90} duration={12} delay={9} size="md" />
+            
+            {/* Orbiting workers - middle ring (reverse) */}
+            <OrbitalWorker icon={Film} orbitRadius={140} duration={18} delay={0} reverse size="lg" />
+            <OrbitalWorker icon={Target} orbitRadius={140} duration={18} delay={6} reverse size="lg" />
+            <OrbitalWorker icon={FileText} orbitRadius={140} duration={18} delay={12} reverse size="lg" />
+            
+            {/* Orbiting workers - outer ring */}
+            <OrbitalWorker icon={Users} orbitRadius={190} duration={25} delay={0} size="sm" />
+            <OrbitalWorker icon={Clock} orbitRadius={190} duration={25} delay={8.33} size="sm" />
+            <OrbitalWorker icon={DollarSign} orbitRadius={190} duration={25} delay={16.66} size="sm" />
             
             {/* Floating particles */}
-            <FloatingParticle delay={0} x="20%" y="30%" />
-            <FloatingParticle delay={0.3} x="80%" y="20%" />
-            <FloatingParticle delay={0.6} x="15%" y="70%" />
-            <FloatingParticle delay={0.9} x="85%" y="60%" />
-            <FloatingParticle delay={1.2} x="50%" y="10%" />
-            <FloatingParticle delay={1.5} x="40%" y="80%" />
-            
-            {/* Connecting lines animation */}
-            <svg className="absolute inset-0 w-full h-full" style={{ opacity: 0.15 }}>
-              <defs>
-                <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="hsl(18, 100%, 55%)" stopOpacity="0" />
-                  <stop offset="50%" stopColor="hsl(18, 100%, 55%)" stopOpacity="1" />
-                  <stop offset="100%" stopColor="hsl(18, 100%, 55%)" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <line x1="10%" y1="20%" x2="50%" y2="50%" stroke="url(#lineGradient)" strokeWidth="1" className="animate-pulse" />
-              <line x1="90%" y1="30%" x2="50%" y2="50%" stroke="url(#lineGradient)" strokeWidth="1" className="animate-pulse" style={{ animationDelay: '0.5s' }} />
-              <line x1="20%" y1="80%" x2="50%" y2="50%" stroke="url(#lineGradient)" strokeWidth="1" className="animate-pulse" style={{ animationDelay: '1s' }} />
-              <line x1="85%" y1="75%" x2="50%" y2="50%" stroke="url(#lineGradient)" strokeWidth="1" className="animate-pulse" style={{ animationDelay: '1.5s' }} />
-            </svg>
+            <FloatingParticle delay={0} x="10%" y="30%" />
+            <FloatingParticle delay={0.4} x="90%" y="25%" />
+            <FloatingParticle delay={0.8} x="5%" y="70%" />
+            <FloatingParticle delay={1.2} x="95%" y="65%" />
+            <FloatingParticle delay={1.6} x="50%" y="5%" />
+            <FloatingParticle delay={2} x="50%" y="95%" />
           </div>
 
           <p className="text-primary font-medium mb-4">Step 2: Scale Your Content</p>
