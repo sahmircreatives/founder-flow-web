@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Copy, Download, ArrowLeft, Check, Loader2, RefreshCw } from 'lucide-react';
+import { Copy, Download, ArrowLeft, Check, Loader2, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import { useToast } from '@/hooks/use-toast';
@@ -55,6 +55,13 @@ const ScriptResult = () => {
     URL.revokeObjectURL(url);
   };
 
+  const scrollToBooking = () => {
+    navigate('/');
+    setTimeout(() => {
+      document.getElementById('book-call')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -98,7 +105,7 @@ const ScriptResult = () => {
             </div>
           </div>
 
-          <div className="bg-card/50 backdrop-blur-sm border border-border rounded-2xl overflow-hidden">
+          <div className="bg-card/50 backdrop-blur-sm border border-border rounded-2xl overflow-hidden mb-8">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <div className="w-16 h-16 rounded-full gradient-bg flex items-center justify-center mb-6 glow-orange">
@@ -112,6 +119,34 @@ const ScriptResult = () => {
                 {currentScript}
               </pre>
             )}
+          </div>
+
+          {/* Upsell CTA */}
+          <div className="relative p-8 rounded-2xl border border-primary bg-card/80 shadow-xl shadow-primary/10">
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+              <div className="gradient-bg text-white text-sm font-medium px-4 py-1 rounded-full flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                Love Your Script?
+              </div>
+            </div>
+
+            <div className="text-center pt-4">
+              <h3 className="text-2xl font-bold text-foreground mb-3">
+                Want thumbnails, editing, and more scripts like this?
+              </h3>
+              <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+                Our full-stack AI agent team handles your entire content production—thumbnails, editing, 
+                scripting, the whole thing. Produce 3x more content for 1/3 the cost.
+              </p>
+              <Button 
+                size="lg"
+                className="gradient-bg text-white hover:opacity-90 glow-orange group"
+                onClick={scrollToBooking}
+              >
+                Book a Free Strategy Call
+                <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </div>
           </div>
         </div>
       </main>

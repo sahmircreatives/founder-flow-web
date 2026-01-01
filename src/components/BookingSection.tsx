@@ -9,15 +9,20 @@ const BookingSection = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 mb-6">
             <span className="px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-medium">
-              It's Free
+              Free Strategy Call
             </span>
-            <span className="text-muted-foreground text-sm">Book a Call</span>
           </div>
 
           {/* Heading */}
-          <h2 className="text-4xl md:text-5xl font-bold mb-12">
-            Book a <span className="italic font-normal">Free Call</span>
+          <h2 className="text-4xl md:text-5xl font-bold mb-4">
+            Ready to <span className="italic font-normal gradient-text">scale your content?</span>
           </h2>
+          
+          {/* Subheading */}
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-12">
+            Book a free call to see how our full-stack AI agent team can help you produce 
+            3x more content—thumbnails, editing, scripting, the whole thing—for 1/3 the cost.
+          </p>
 
           {/* Cal.com Embed */}
           <div className="rounded-2xl overflow-hidden border border-border bg-card/50 backdrop-blur-sm">
