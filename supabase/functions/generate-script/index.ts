@@ -115,7 +115,13 @@ Write a ${targetMinutes}-minute YouTube script for the video titled "${videoTitl
 7. Handles objections naturally
 8. Ends with a clear, compelling CTA
 
-Match the voice and tone from the examples provided. Use the "do phrases" naturally and avoid the "don't phrases".`;
+Match the voice and tone from the examples provided. Use the "do phrases" naturally and avoid the "don't phrases".
+
+Write a direct response YouTube script for online business owners (course creators, info products, coaches) using multiple context files full of my ICP's information.
+
+Follow the project instructions to write the script and make sure to reference the context to tailor to the user.
+
+Don't add visual cues, or anything except the script.`;
 
     console.log("Calling Anthropic API with claude-opus-4-5-20251101...");
     
