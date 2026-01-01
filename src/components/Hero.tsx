@@ -25,11 +25,10 @@ const Hero = () => {
 
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6 animate-fade-up opacity-0 animation-delay-100">
-            AI Scriptwriter —{' '}
+            3x your content output for 1/3'd of the cost —{' '}
             <span className="font-display italic gradient-text text-shadow-glow">
-              High-Retention Scripts
+              your full stack AI agent social media team
             </span>
-            {' '}in Minutes
           </h1>
 
           {/* Subheadline */}
