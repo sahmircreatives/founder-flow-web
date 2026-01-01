@@ -26,9 +26,7 @@ const Hero = () => {
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6 animate-fade-up opacity-0 animation-delay-100">
             3x your content output for 1/3 of the cost —{' '}
-            <span className="font-display italic gradient-text text-shadow-glow">
-              your full stack AI agent social media team
-            </span>
+            your full stack AI agent social media team
           </h1>
 
           {/* Subheadline */}
@@ -44,7 +42,7 @@ const Hero = () => {
               className="gradient-bg hover:opacity-90 transition-all duration-200 text-white font-semibold px-8 py-6 text-base glow-orange group"
               onClick={() => navigate('/create')}
             >
-              Build My Script
+              Free Youtube Script
               <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
