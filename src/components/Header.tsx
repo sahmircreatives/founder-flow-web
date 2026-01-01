@@ -59,7 +59,13 @@ const Header = () => {
           <div className="hidden md:flex items-center gap-4">
             <Button 
               className="gradient-bg hover:opacity-90 transition-all duration-200 text-white font-medium px-6 glow-orange"
-              onClick={() => navigate('/create')}
+              onClick={() => {
+                if (isHomePage) {
+                  document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  navigate('/#booking');
+                }
+              }}
             >
               Get Your Slave
             </Button>
@@ -92,7 +98,14 @@ const Header = () => {
               <div className="pt-4 border-t border-border flex flex-col gap-3">
                 <Button 
                   className="gradient-bg text-white font-medium w-full"
-                  onClick={() => { navigate('/create'); setIsMobileMenuOpen(false); }}
+                  onClick={() => { 
+                    setIsMobileMenuOpen(false);
+                    if (isHomePage) {
+                      document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                      navigate('/#booking');
+                    }
+                  }}
                 >
                   Get Your Slave
                 </Button>
