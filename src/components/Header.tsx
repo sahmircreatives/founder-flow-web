@@ -61,9 +61,9 @@ const Header = () => {
               className="gradient-bg hover:opacity-90 transition-all duration-200 text-white font-medium px-6 glow-orange"
               onClick={() => {
                 if (isHomePage) {
-                  document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' });
+                  document.getElementById('book-call')?.scrollIntoView({ behavior: 'smooth' });
                 } else {
-                  navigate('/#booking');
+                  navigate('/#book-call');
                 }
               }}
             >
@@ -101,9 +101,9 @@ const Header = () => {
                   onClick={() => { 
                     setIsMobileMenuOpen(false);
                     if (isHomePage) {
-                      document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' });
+                      document.getElementById('book-call')?.scrollIntoView({ behavior: 'smooth' });
                     } else {
-                      navigate('/#booking');
+                      navigate('/#book-call');
                     }
                   }}
                 >
