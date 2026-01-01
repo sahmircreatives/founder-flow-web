@@ -1,4 +1,4 @@
-import { FileText, Zap, Target, Image, Film, PenTool, Users, Clock, DollarSign } from 'lucide-react';
+import { FileText, Zap, Target, Image, Film, PenTool, Users, Clock, DollarSign, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
@@ -61,6 +61,62 @@ const benefits = [
     description: 'AI agents + human oversight for every step of content creation.',
   },
 ];
+
+// Animated AI Worker component
+const AnimatedWorker = ({ 
+  delay, 
+  duration, 
+  className, 
+  icon: Icon,
+  color = 'primary'
+}: { 
+  delay: number; 
+  duration: number; 
+  className: string;
+  icon: React.ElementType;
+  color?: string;
+}) => (
+  <div 
+    className={`absolute ${className}`}
+    style={{
+      animation: `float ${duration}s ease-in-out infinite`,
+      animationDelay: `${delay}s`,
+    }}
+  >
+    <div className={`relative w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center backdrop-blur-sm`}>
+      <Icon className="w-6 h-6 text-primary" />
+      {/* Pulse ring */}
+      <div 
+        className="absolute inset-0 rounded-xl border border-primary/50"
+        style={{
+          animation: `pulse-ring 2s ease-out infinite`,
+          animationDelay: `${delay}s`,
+        }}
+      />
+    </div>
+    {/* Connection line */}
+    <div 
+      className="absolute top-1/2 left-1/2 w-20 h-px bg-gradient-to-r from-primary/30 to-transparent"
+      style={{
+        transform: 'rotate(45deg)',
+        transformOrigin: 'left center',
+      }}
+    />
+  </div>
+);
+
+// Floating particles
+const FloatingParticle = ({ delay, x, y }: { delay: number; x: string; y: string }) => (
+  <div 
+    className="absolute w-1 h-1 rounded-full bg-primary/40"
+    style={{
+      left: x,
+      top: y,
+      animation: `particle-float 4s ease-in-out infinite`,
+      animationDelay: `${delay}s`,
+    }}
+  />
+);
 
 const Features = () => {
   const navigate = useNavigate();
@@ -141,8 +197,39 @@ const Features = () => {
           </div>
         </div>
 
-        {/* Full Team Section Header */}
-        <div className="max-w-3xl mx-auto text-center mb-16">
+        {/* Full Team Section Header with Animated Workers */}
+        <div className="relative max-w-3xl mx-auto text-center mb-16">
+          {/* Animated AI Workers floating around */}
+          <div className="absolute inset-0 -inset-x-32 hidden md:block pointer-events-none">
+            <AnimatedWorker delay={0} duration={4} className="top-0 left-0" icon={PenTool} />
+            <AnimatedWorker delay={0.5} duration={5} className="top-12 right-4" icon={Image} />
+            <AnimatedWorker delay={1} duration={4.5} className="bottom-8 left-8" icon={Film} />
+            <AnimatedWorker delay={1.5} duration={5.5} className="bottom-0 right-12" icon={Bot} />
+            
+            {/* Floating particles */}
+            <FloatingParticle delay={0} x="20%" y="30%" />
+            <FloatingParticle delay={0.3} x="80%" y="20%" />
+            <FloatingParticle delay={0.6} x="15%" y="70%" />
+            <FloatingParticle delay={0.9} x="85%" y="60%" />
+            <FloatingParticle delay={1.2} x="50%" y="10%" />
+            <FloatingParticle delay={1.5} x="40%" y="80%" />
+            
+            {/* Connecting lines animation */}
+            <svg className="absolute inset-0 w-full h-full" style={{ opacity: 0.15 }}>
+              <defs>
+                <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="hsl(18, 100%, 55%)" stopOpacity="0" />
+                  <stop offset="50%" stopColor="hsl(18, 100%, 55%)" stopOpacity="1" />
+                  <stop offset="100%" stopColor="hsl(18, 100%, 55%)" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <line x1="10%" y1="20%" x2="50%" y2="50%" stroke="url(#lineGradient)" strokeWidth="1" className="animate-pulse" />
+              <line x1="90%" y1="30%" x2="50%" y2="50%" stroke="url(#lineGradient)" strokeWidth="1" className="animate-pulse" style={{ animationDelay: '0.5s' }} />
+              <line x1="20%" y1="80%" x2="50%" y2="50%" stroke="url(#lineGradient)" strokeWidth="1" className="animate-pulse" style={{ animationDelay: '1s' }} />
+              <line x1="85%" y1="75%" x2="50%" y2="50%" stroke="url(#lineGradient)" strokeWidth="1" className="animate-pulse" style={{ animationDelay: '1.5s' }} />
+            </svg>
+          </div>
+
           <p className="text-primary font-medium mb-4">Step 2: Scale Your Content</p>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-6">
             Your full-stack{' '}
