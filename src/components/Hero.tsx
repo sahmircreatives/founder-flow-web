@@ -31,8 +31,8 @@ const Hero = () => {
 
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-up opacity-0 animation-delay-200">
-            Answer a few quick questions about your video. Get a complete, 
-            expert-level YouTube script designed to hook viewers and keep them watching.
+            AI agents that research, write, and repurpose your content across every platform. 
+            Scale your brand without scaling your team.
           </p>
 
           {/* CTA Buttons */}
