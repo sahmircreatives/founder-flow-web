@@ -1,6 +1,7 @@
 import { FileText, Zap, Target, Image, Film, PenTool, Users, Clock, DollarSign, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
 
 const scriptFeatures = [
   {
@@ -152,6 +153,193 @@ const CentralHub = () => (
   </div>
 );
 
+// Laser Connected Stack component
+const LaserConnectedStack = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [line1Progress, setLine1Progress] = useState(0);
+  const [line2Progress, setLine2Progress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!containerRef.current) return;
+      
+      const rect = containerRef.current.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+      
+      // Calculate how far the section has scrolled into view
+      const sectionStart = rect.top;
+      const sectionEnd = rect.bottom;
+      const viewportCenter = windowHeight / 2;
+      
+      // Progress from 0 to 1 as section scrolls through viewport
+      const totalDistance = sectionEnd - sectionStart;
+      const scrolled = viewportCenter - sectionStart;
+      const progress = Math.max(0, Math.min(1, scrolled / totalDistance));
+      
+      setScrollProgress(progress);
+      
+      // Line 1 animates from 0-50% scroll
+      setLine1Progress(Math.max(0, Math.min(1, progress * 3)));
+      // Line 2 animates from 33-83% scroll  
+      setLine2Progress(Math.max(0, Math.min(1, (progress - 0.33) * 3)));
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initial call
+    
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const services = [
+    {
+      icon: PenTool,
+      title: 'AI Scripting',
+      description: 'Retention-optimized scripts crafted for your voice and audience.',
+      position: 'left' as const,
+    },
+    {
+      icon: Image,
+      title: 'Thumbnail Design', 
+      description: 'Click-worthy thumbnails that boost your CTR and views.',
+      position: 'right' as const,
+    },
+    {
+      icon: Film,
+      title: 'Video Editing',
+      description: 'Professional editing with cuts, graphics, and pacing that keeps viewers hooked.',
+      position: 'left' as const,
+    },
+  ];
+
+  return (
+    <div ref={containerRef} className="relative max-w-4xl mx-auto mb-12">
+      {/* SVG Laser Lines */}
+      <svg 
+        className="absolute inset-0 w-full h-full pointer-events-none z-10"
+        style={{ overflow: 'visible' }}
+      >
+        <defs>
+          {/* Gradient for laser glow */}
+          <linearGradient id="laserGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="1" />
+            <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.4" />
+          </linearGradient>
+          <linearGradient id="laserGradient2" x1="100%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="1" />
+            <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.4" />
+          </linearGradient>
+          {/* Glow filter */}
+          <filter id="laserGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        
+        {/* Line 1: Top-left to middle-right */}
+        <path
+          d="M 25% 80 Q 50% 140 75% 200"
+          fill="none"
+          stroke="url(#laserGradient1)"
+          strokeWidth="3"
+          filter="url(#laserGlow)"
+          strokeLinecap="round"
+          strokeDasharray="200"
+          strokeDashoffset={200 - (200 * line1Progress)}
+          className="transition-all duration-100"
+          style={{
+            opacity: line1Progress > 0 ? 0.8 + (line1Progress * 0.2) : 0,
+          }}
+        />
+        {/* Animated pulse on line 1 */}
+        {line1Progress > 0.5 && (
+          <circle r="4" fill="hsl(var(--primary))" filter="url(#laserGlow)">
+            <animateMotion dur="1.5s" repeatCount="indefinite" path="M 25% 80 Q 50% 140 75% 200" />
+          </circle>
+        )}
+        
+        {/* Line 2: Middle-right to bottom-left */}
+        <path
+          d="M 75% 280 Q 50% 340 25% 400"
+          fill="none"
+          stroke="url(#laserGradient2)"
+          strokeWidth="3"
+          filter="url(#laserGlow)"
+          strokeLinecap="round"
+          strokeDasharray="200"
+          strokeDashoffset={200 - (200 * line2Progress)}
+          className="transition-all duration-100"
+          style={{
+            opacity: line2Progress > 0 ? 0.8 + (line2Progress * 0.2) : 0,
+          }}
+        />
+        {/* Animated pulse on line 2 */}
+        {line2Progress > 0.5 && (
+          <circle r="4" fill="hsl(var(--primary))" filter="url(#laserGlow)">
+            <animateMotion dur="1.5s" repeatCount="indefinite" path="M 75% 280 Q 50% 340 25% 400" />
+          </circle>
+        )}
+      </svg>
+
+      {/* Service Cards in Zigzag Layout */}
+      <div className="flex flex-col gap-8">
+        {services.map((service, index) => (
+          <div
+            key={index}
+            className={`flex ${service.position === 'right' ? 'justify-end' : 'justify-start'}`}
+          >
+            <div
+              className={`group relative p-8 rounded-2xl border border-border bg-card/50 backdrop-blur-sm hover:border-primary/50 transition-all duration-500 w-full md:w-2/3 lg:w-1/2 ${
+                scrollProgress > index * 0.3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+              style={{
+                transitionDelay: `${index * 100}ms`,
+              }}
+            >
+              {/* Glow effect when connected */}
+              <div 
+                className="absolute -inset-1 rounded-2xl bg-primary/20 blur-xl transition-opacity duration-500 -z-10"
+                style={{
+                  opacity: index === 0 ? line1Progress * 0.6 : 
+                           index === 1 ? Math.max(line1Progress, line2Progress) * 0.6 : 
+                           line2Progress * 0.6
+                }}
+              />
+              
+              <div className="flex items-start gap-6">
+                <div className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <service.icon className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">{service.title}</h3>
+                  <p className="text-muted-foreground">{service.description}</p>
+                </div>
+              </div>
+
+              {/* Connection point indicator */}
+              <div 
+                className={`absolute w-3 h-3 rounded-full bg-primary transition-all duration-300 ${
+                  service.position === 'right' ? '-left-1.5' : '-right-1.5'
+                } top-1/2 -translate-y-1/2`}
+                style={{
+                  boxShadow: `0 0 ${10 + (scrollProgress * 20)}px hsl(var(--primary))`,
+                  opacity: scrollProgress > index * 0.25 ? 1 : 0,
+                }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const Features = () => {
   const navigate = useNavigate();
 
@@ -279,21 +467,8 @@ const Features = () => {
           </p>
         </div>
 
-        {/* Team Services Grid */}
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
-          {teamServices.map((service, index) => (
-            <div
-              key={index}
-              className="group relative p-8 rounded-2xl border border-border bg-card/50 backdrop-blur-sm hover:border-primary/50 transition-all duration-300 text-center"
-            >
-              <div className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                <service.icon className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground mb-3">{service.title}</h3>
-              <p className="text-muted-foreground">{service.description}</p>
-            </div>
-          ))}
-        </div>
+        {/* Team Services Stack with Laser Connections */}
+        <LaserConnectedStack />
 
         {/* Benefits Grid */}
         <div className="grid md:grid-cols-3 gap-6 mb-12">
