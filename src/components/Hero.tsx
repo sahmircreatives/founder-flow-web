@@ -1,4 +1,4 @@
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
@@ -20,19 +20,19 @@ const Hero = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-secondary/50 backdrop-blur-sm mb-8 animate-fade-up opacity-0">
             <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm text-muted-foreground">AI-Powered Script Generation</span>
+            <span className="text-sm text-muted-foreground">Free YouTube Script Generator</span>
           </div>
 
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6 animate-fade-up opacity-0 animation-delay-100">
-            3x your content output for 1/3 of the cost —{' '}
-            your full stack AI agent social media team
+            Produce 3x more content{' '}
+            <span className="gradient-text">for 1/3 the cost</span>
           </h1>
 
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-up opacity-0 animation-delay-200">
-            AI agents that research, write, and repurpose your content across every platform. 
-            Scale your brand without scaling your team.
+            Get a free YouTube script in 2 minutes. Then discover how our full-stack AI agent team 
+            handles your thumbnails, editing, and scripting—so you can focus on creating.
           </p>
 
           {/* CTA Buttons */}
@@ -40,18 +40,27 @@ const Hero = () => {
             <Button 
               size="lg" 
               className="gradient-bg hover:opacity-90 transition-all duration-200 text-white font-semibold px-8 py-6 text-base glow-orange group"
+              onClick={() => navigate('/create')}
+            >
+              <Play className="mr-2 w-4 h-4" />
+              Get Your Free Script
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline"
+              className="border-border text-foreground hover:bg-secondary px-8 py-6 text-base group"
               onClick={() => {
                 document.getElementById('book-call')?.scrollIntoView({ behavior: 'smooth' });
               }}
             >
-              Book a call
+              Book a Call
               <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
 
           {/* Microcopy */}
           <p className="text-sm text-muted-foreground animate-fade-up opacity-0 animation-delay-400">
-            No links. No scraping. Just answers → script.
+            100% free. No credit card. Script ready in 2 minutes.
           </p>
 
           {/* Social Proof */}
@@ -64,10 +73,10 @@ const Hero = () => {
                   </svg>
                 ))}
               </div>
-              <span>Rated Excellent – 4.9/5</span>
+              <span>Trusted by 500+ creators</span>
             </div>
             <div className="hidden sm:block w-px h-4 bg-border" />
-            <span>5,000+ scripts generated</span>
+            <span>10,000+ scripts generated</span>
           </div>
         </div>
 
@@ -106,7 +115,7 @@ const Hero = () => {
             {/* CTA in Preview */}
             <div className="flex justify-end">
               <Button className="gradient-bg text-white font-medium" onClick={() => navigate('/create')}>
-                Get Your Free Youtube Script
+                Get Your Free Script
               </Button>
             </div>
 

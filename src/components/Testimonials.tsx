@@ -6,7 +6,7 @@ const testimonials = [
     role: 'YouTuber',
     company: '850K subscribers',
     image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=faces',
-    content: 'I used to spend 4+ hours writing scripts. Now I answer 5 questions and have a draft in 2 minutes. My retention has actually improved.',
+    content: 'I used to spend 4+ hours on scripts alone. Now I get a solid draft in 2 minutes, and their team handles my thumbnails and editing too. Game changer.',
     rating: 5,
   },
   {
@@ -14,7 +14,7 @@ const testimonials = [
     role: 'Content Strategist',
     company: 'Agency Owner',
     image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=faces',
-    content: 'We use this for all our client scripts now. The hook formulas alone are worth it—we\'ve seen 20% higher average view duration.',
+    content: 'We switched all our client work to their AI team. 3x output, happier clients, and our margins actually improved. The ROI is insane.',
     rating: 5,
   },
   {
@@ -22,7 +22,7 @@ const testimonials = [
     role: 'Founder',
     company: 'Tech Review Channel',
     image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces',
-    content: 'Finally, a script tool that understands YouTube. The structure it generates is exactly what high-retention videos need.',
+    content: 'Started with the free script generator—it was so good I booked the call. Now they handle everything and I went from 2 videos/month to 8.',
     rating: 5,
   },
   {
@@ -30,7 +30,7 @@ const testimonials = [
     role: 'Video Producer',
     company: 'Freelance',
     image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=faces',
-    content: 'The ready-to-record format saves me so much time. Timestamps, visual cues, everything is there. I just hit record.',
+    content: 'The thumbnails alone are worth it. My CTR jumped 40% in the first month. Add the scripting and editing? I can finally take on more clients.',
     rating: 5,
   },
   {
@@ -38,7 +38,7 @@ const testimonials = [
     role: 'Course Creator',
     company: 'EduTech Founder',
     image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces',
-    content: 'I create 3-4 videos a week for my course. This tool cut my scripting time by 80%. The quality is consistently professional.',
+    content: 'I create 3-4 videos a week for my course. Their full-stack team cut my production time by 80% and the quality is consistently professional.',
     rating: 5,
   },
   {
@@ -46,7 +46,7 @@ const testimonials = [
     role: 'Marketing Director',
     company: 'SaaS Startup',
     image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces',
-    content: 'We needed YouTube content fast. This gave us expert-level scripts without hiring a scriptwriter. ROI was immediate.',
+    content: 'We needed YouTube content fast without hiring in-house. This gave us everything—scripts, thumbnails, editing—at a fraction of agency prices.',
     rating: 5,
   },
 ];
@@ -62,12 +62,12 @@ const Testimonials = () => {
         <div className="max-w-3xl mx-auto text-center mb-16">
           <p className="text-primary font-medium mb-4">Testimonials</p>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-6">
-            Loved by{' '}
+            Trusted by{' '}
             <span className="font-display italic gradient-text">creators</span>
-            {' '}worldwide
+            {' '}who scale
           </h2>
           <p className="text-lg text-muted-foreground">
-            See what YouTubers and content teams are saying about AI Scriptwriter
+            See how YouTubers and content teams are producing more for less
           </p>
         </div>
 
