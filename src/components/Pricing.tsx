@@ -1,32 +1,11 @@
 import { Check, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-
-const freeFeatures = [
-  'Unlimited free scripts',
-  'All video lengths supported',
-  'Multiple tones & styles',
-  'Hook variations',
-  'Retention timestamps',
-  'Copy & download instantly',
-];
-
-const teamFeatures = [
-  'Everything in Free Script Generator',
-  'Custom thumbnail design',
-  'Professional video editing',
-  'Full content strategy',
-  'Dedicated AI agent team',
-  'Human oversight on every asset',
-  'Unlimited revisions',
-  'Priority turnaround',
-];
-
+const freeFeatures = ['Unlimited free scripts', 'All video lengths supported', 'Multiple tones & styles', 'Hook variations', 'Retention timestamps', 'Copy & download instantly'];
+const teamFeatures = ['Everything in Free Script Generator', 'Custom thumbnail design', 'Professional video editing', 'Full content strategy', 'Dedicated AI agent team', 'Human oversight on every asset', 'Unlimited revisions', 'Priority turnaround'];
 const Pricing = () => {
   const navigate = useNavigate();
-
-  return (
-    <section id="pricing" className="relative py-24 md:py-32 overflow-hidden">
+  return <section id="pricing" className="relative py-24 md:py-32 overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-secondary/10 via-background to-background" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px]" />
@@ -61,20 +40,15 @@ const Pricing = () => {
             </div>
 
             <ul className="space-y-4 mb-8">
-              {freeFeatures.map((feature, i) => (
-                <li key={i} className="flex items-center gap-3 text-foreground/90">
+              {freeFeatures.map((feature, i) => <li key={i} className="flex items-center gap-3 text-foreground/90">
                   <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3 text-primary" />
                   </div>
                   {feature}
-                </li>
-              ))}
+                </li>)}
             </ul>
 
-            <Button
-              className="w-full bg-secondary hover:bg-secondary/80 text-foreground"
-              onClick={() => navigate('/create')}
-            >
+            <Button className="w-full bg-secondary hover:bg-secondary/80 text-foreground" onClick={() => navigate('/create')}>
               Get Your Free Script
             </Button>
           </div>
@@ -96,28 +70,25 @@ const Pricing = () => {
 
             <div className="mb-8">
               <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-bold text-foreground">Custom</span>
+                <span className="text-5xl font-bold text-foreground">ContentSlave</span>
               </div>
               <p className="text-sm text-primary mt-2">Based on your content volume</p>
             </div>
 
             <ul className="space-y-4 mb-8">
-              {teamFeatures.map((feature, i) => (
-                <li key={i} className="flex items-center gap-3 text-foreground/90">
+              {teamFeatures.map((feature, i) => <li key={i} className="flex items-center gap-3 text-foreground/90">
                   <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3 text-primary" />
                   </div>
                   {feature}
-                </li>
-              ))}
+                </li>)}
             </ul>
 
-            <Button
-              className="w-full gradient-bg text-white hover:opacity-90 glow-orange group"
-              onClick={() => {
-                document.getElementById('book-call')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-            >
+            <Button className="w-full gradient-bg text-white hover:opacity-90 glow-orange group" onClick={() => {
+            document.getElementById('book-call')?.scrollIntoView({
+              behavior: 'smooth'
+            });
+          }}>
               Book a Free Call
               <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
@@ -138,8 +109,6 @@ const Pricing = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default Pricing;
