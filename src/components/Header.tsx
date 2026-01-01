@@ -35,11 +35,8 @@ const Header = () => {
         <nav className="flex items-center justify-between h-20">
           {/* Logo */}
           <a href="/" className="flex items-center gap-2 group" onClick={(e) => { e.preventDefault(); navigate('/'); }}>
-            <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">AI</span>
-            </div>
             <span className="text-foreground font-semibold text-lg tracking-tight">
-              AI<span className="gradient-text"> Scriptwriter</span>
+              content<span className="gradient-text">slave</span>
             </span>
           </a>
 
