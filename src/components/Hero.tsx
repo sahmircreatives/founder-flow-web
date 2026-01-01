@@ -20,7 +20,7 @@ const Hero = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-secondary/50 backdrop-blur-sm mb-8 animate-fade-up opacity-0">
             <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm text-muted-foreground">Free YouTube Script Generator</span>
+            <span className="text-sm text-muted-foreground">Full-Stack AI Content Team</span>
           </div>
 
           {/* Headline */}
