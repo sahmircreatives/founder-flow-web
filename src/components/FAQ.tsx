@@ -7,36 +7,40 @@ import {
 
 const faqs = [
   {
-    question: "How does the free script generator work?",
-    answer: "Just answer 5 quick questions about your video topic, audience, and preferred style. Our AI generates a complete, retention-optimized script in about 2 minutes—no links to paste, no content to scrape. It's 100% free, forever."
+    question: "What is ContentSlave?",
+    answer: "ContentSlave turns your offer + customer psychology into packaged, scripted, and packaged to drive qualified inbound leads, so you're not guessing topics, rambling on camera, or relying on \"viral luck.\""
   },
   {
-    question: "What's included in the full AI content team service?",
-    answer: "Our full-stack team handles everything on the content side: AI-powered scripting, custom thumbnail design, and professional video editing. We manage the entire production pipeline so you can focus on filming and growing your channel."
+    question: "Who is ContentSlave for and who is it NOT for?",
+    answer: "It's for coaches, consultants, course creators, agencies who want YouTube to nurture, attract leads, and build authority (charge higher prices). Not for people chasing virality, beginners with no clear offer, or anyone who won't publish consistently."
   },
   {
-    question: "How much does the full AI content team cost?",
-    answer: "Pricing is custom based on your content volume and needs. Most creators see 60-70% cost savings compared to hiring freelancers or agencies. Book a free call and we'll put together a quote tailored to your situation."
+    question: "What's the difference between the free script generator and the full done-for-you system?",
+    answer: "Free generator: spits out scripts when you feed it info. Full system: we install the whole shabang using AI. All you have to do is install the system and create."
   },
   {
-    question: "What are the turnaround times?",
-    answer: "Scripts are delivered same-day. Thumbnails typically take 24-48 hours. Edited videos depend on length and complexity, but most are delivered within 3-5 business days. We offer priority turnaround for time-sensitive content."
+    question: "How does this help me get clients?",
+    answer: "If you have an ad, it helps nurture clients with long form content, but the power of this system is that it also GENERATES inbounds, not on the first day, but evergreen. Months, years, decades."
   },
   {
-    question: "How do you maintain quality with AI?",
-    answer: "Every asset goes through human oversight before delivery. Our AI agents handle the heavy lifting, but our team reviews and refines everything to ensure it meets professional standards and matches your brand voice."
+    question: "What do I need to provide for it to generate scripts that actually sound like me?",
+    answer: "Two things: Business context (fill out the questionnaire) and Voice examples (tweets, writing samples, transcripts). To preface: the script generator is just a free tool, meaning it's not the best of what we have. That's gatekept to our members in ContentSlave."
   },
   {
-    question: "Can you match my existing brand and style?",
-    answer: "Absolutely. During onboarding, we analyze your existing content to understand your voice, visual style, and what works for your audience. We create brand presets that ensure consistency across all deliverables."
+    question: "What exactly do I get with the full system (deliverables + support)?",
+    answer: "Script that frames the cost of inaction, creates authority, while driving viewers into leads. Packaging framed so you don't look like a 1-1 copycat, but the illusion of exclusivity. Content that's not just bearable to watch, but keeps prospects engaged. Strategy so you actually have the route to target your audience. Weekly coaching calls to help with the strategy and how you speak on camera."
   },
   {
-    question: "What if I'm not happy with a deliverable?",
-    answer: "We offer unlimited revisions on all deliverables. If something doesn't hit the mark, just let us know and we'll refine it until you're satisfied. Your success is our success."
+    question: "How long does it take to see results, and what does \"results\" mean here?",
+    answer: "No results are guaranteed, because to be honest, I DON'T know you. You might be the most insufferable guy on the planet, or you might make your investment back 100 fold."
   },
   {
-    question: "How do I get started?",
-    answer: "Start by trying our free script generator to see the quality firsthand. If you like what you see, book a free strategy call and we'll discuss how our full team can help you scale your content production."
+    question: "Do I need to be on camera / be a good speaker for this to work?",
+    answer: "No. You can use a teleprompter. The key is clarity + value."
+  },
+  {
+    question: "How much does it cost, what's included, and what's the next step to start?",
+    answer: "The free tool is free. The full system price depends on scope. Use the generator, which is 1/10 of the value of what's inside ContentSlave, then book a call if you want the full engine installed and turned into a predictable lead channel."
   },
 ];
 
