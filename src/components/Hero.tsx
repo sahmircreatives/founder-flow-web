@@ -40,9 +40,11 @@ const Hero = () => {
             <Button 
               size="lg" 
               className="gradient-bg hover:opacity-90 transition-all duration-200 text-white font-semibold px-8 py-6 text-base glow-orange group"
-              onClick={() => navigate('/create')}
+              onClick={() => {
+                document.getElementById('book-call')?.scrollIntoView({ behavior: 'smooth' });
+              }}
             >
-              Free Youtube Script
+              Book a call
               <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
