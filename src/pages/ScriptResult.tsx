@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Copy, Download, ArrowLeft, Check, Loader2, ArrowRight, Sparkles, X, BookOpen, CheckCircle2, ExternalLink, AlertTriangle } from 'lucide-react';
+import { Copy, Download, ArrowLeft, Check, Loader2, ArrowRight, Sparkles, X, BookOpen, CheckCircle2, ExternalLink, AlertTriangle, Mic, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import { useToast } from '@/hooks/use-toast';
@@ -33,6 +33,21 @@ interface ValidationResult {
   issues: string[];
 }
 
+interface ToneSummary {
+  one_sentence_voice: string;
+  tone_rules: string[];
+  do_phrases: string[];
+  dont_phrases: string[];
+  cadence_notes: string[];
+  example_lines: string[];
+}
+
+interface ContextUseLog {
+  tweet_proof_items_used: number;
+  tweet_proof_items: string[];
+  sections: { name: string; non_tweet_value_points: number }[];
+}
+
 const ScriptResult = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -42,13 +57,15 @@ const ScriptResult = () => {
   const [variation, setVariation] = useState<'A' | 'B' | 'C'>('A');
   const [showModal, setShowModal] = useState(false);
   const [showCloseButton, setShowCloseButton] = useState(false);
-  const [activeTab, setActiveTab] = useState<'script' | 'research' | 'alignment'>('script');
+  const [activeTab, setActiveTab] = useState<'script' | 'research' | 'alignment' | 'tone' | 'usage'>('script');
 
-  const { script, businessContext, voiceData, researchPack, alignmentChecklist, validation } = location.state || {};
+  const { script, businessContext, voiceData, researchPack, alignmentChecklist, validation, toneSummary, contextUseLog } = location.state || {};
   const [currentScript, setCurrentScript] = useState(script || '');
   const [currentResearch, setCurrentResearch] = useState<{ sources: ResearchSource[]; claims: SupportedClaim[] }>(researchPack || { sources: [], claims: [] });
   const [currentChecklist, setCurrentChecklist] = useState<AlignmentChecklist | null>(alignmentChecklist || null);
   const [currentValidation, setCurrentValidation] = useState<ValidationResult | null>(validation || null);
+  const [currentToneSummary, setCurrentToneSummary] = useState<ToneSummary | null>(toneSummary || null);
+  const [currentContextUseLog, setCurrentContextUseLog] = useState<ContextUseLog | null>(contextUseLog || null);
 
   useEffect(() => {
     if (script && !isLoading) {
@@ -88,6 +105,8 @@ const ScriptResult = () => {
       setCurrentResearch(data.research_pack || { sources: [], claims: [] });
       setCurrentChecklist(data.alignment_checklist || null);
       setCurrentValidation(data.validation || null);
+      setCurrentToneSummary(data.tone_summary || null);
+      setCurrentContextUseLog(data.context_use_log || null);
     } catch (error: any) {
       toast({ title: 'Regeneration failed', description: error.message, variant: 'destructive' });
     } finally {
@@ -212,7 +231,7 @@ const ScriptResult = () => {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2 mb-4">
+          <div className="flex flex-wrap gap-2 mb-4">
             <Button
               variant={activeTab === 'script' ? 'default' : 'outline'}
               size="sm"
@@ -229,7 +248,7 @@ const ScriptResult = () => {
               className={activeTab === 'research' ? 'gradient-bg text-white' : 'border-border'}
             >
               <BookOpen className="w-4 h-4 mr-2" />
-              Research ({currentResearch.claims.length} citations)
+              Research ({currentResearch.claims.length})
             </Button>
             <Button
               variant={activeTab === 'alignment' ? 'default' : 'outline'}
@@ -239,6 +258,24 @@ const ScriptResult = () => {
             >
               <CheckCircle2 className="w-4 h-4 mr-2" />
               Alignment
+            </Button>
+            <Button
+              variant={activeTab === 'tone' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setActiveTab('tone')}
+              className={activeTab === 'tone' ? 'gradient-bg text-white' : 'border-border'}
+            >
+              <Mic className="w-4 h-4 mr-2" />
+              Tone
+            </Button>
+            <Button
+              variant={activeTab === 'usage' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setActiveTab('usage')}
+              className={activeTab === 'usage' ? 'gradient-bg text-white' : 'border-border'}
+            >
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Usage
             </Button>
           </div>
 
@@ -371,6 +408,128 @@ const ScriptResult = () => {
                         <p className="text-sm text-muted-foreground">
                           {currentChecklist.filtered_claims_count} of {currentChecklist.original_claims_count} research claims kept after alignment filtering
                         </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tone Tab */}
+                {activeTab === 'tone' && currentToneSummary && (
+                  <div className="p-8 space-y-6">
+                    <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                      <Mic className="w-5 h-5 text-primary" />
+                      Extracted Voice & Tone
+                    </h3>
+
+                    <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
+                      <h4 className="text-sm font-medium text-foreground mb-1">Voice Summary</h4>
+                      <p className="text-sm text-muted-foreground">{currentToneSummary.one_sentence_voice}</p>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {currentToneSummary.tone_rules.length > 0 && (
+                        <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+                          <h4 className="text-sm font-medium text-foreground mb-2">Tone Rules</h4>
+                          <ul className="text-sm text-muted-foreground space-y-1">
+                            {currentToneSummary.tone_rules.map((rule, i) => (
+                              <li key={i}>• {rule}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {currentToneSummary.do_phrases.length > 0 && (
+                        <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+                          <h4 className="text-sm font-medium text-foreground mb-2">Do Use</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {currentToneSummary.do_phrases.map((phrase, i) => (
+                              <span key={i} className="px-2 py-1 text-xs bg-green-500/20 text-green-400 rounded">
+                                {phrase}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {currentToneSummary.dont_phrases.length > 0 && (
+                        <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+                          <h4 className="text-sm font-medium text-foreground mb-2">Don't Use</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {currentToneSummary.dont_phrases.map((phrase, i) => (
+                              <span key={i} className="px-2 py-1 text-xs bg-red-500/20 text-red-400 rounded">
+                                {phrase}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {currentToneSummary.cadence_notes.length > 0 && (
+                        <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+                          <h4 className="text-sm font-medium text-foreground mb-2">Cadence Notes</h4>
+                          <ul className="text-sm text-muted-foreground space-y-1">
+                            {currentToneSummary.cadence_notes.map((note, i) => (
+                              <li key={i}>• {note}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+
+                    {currentToneSummary.example_lines.length > 0 && (
+                      <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+                        <h4 className="text-sm font-medium text-foreground mb-2">Example Lines (Style Reference)</h4>
+                        <div className="space-y-2">
+                          {currentToneSummary.example_lines.map((line, i) => (
+                            <p key={i} className="text-sm text-muted-foreground italic">"{line}"</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Usage Tab */}
+                {activeTab === 'usage' && currentContextUseLog && (
+                  <div className="p-8 space-y-6">
+                    <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5 text-primary" />
+                      Context Usage Log
+                    </h3>
+
+                    <div className={`p-4 rounded-lg border ${currentContextUseLog.tweet_proof_items_used <= 2 ? 'border-green-500/30 bg-green-500/10' : 'border-red-500/30 bg-red-500/10'}`}>
+                      <h4 className="text-sm font-medium text-foreground mb-1">Tweet-Based Proof Items</h4>
+                      <p className={`text-2xl font-bold ${currentContextUseLog.tweet_proof_items_used <= 2 ? 'text-green-500' : 'text-red-500'}`}>
+                        {currentContextUseLog.tweet_proof_items_used} / 2 max
+                      </p>
+                      {currentContextUseLog.tweet_proof_items.length > 0 && (
+                        <ul className="mt-2 text-xs text-muted-foreground space-y-1">
+                          {currentContextUseLog.tweet_proof_items.map((item, i) => (
+                            <li key={i}>• {item}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div>
+                      <h4 className="text-sm font-medium text-foreground mb-3">Non-Tweet Value Points by Section</h4>
+                      <div className="grid gap-3">
+                        {currentContextUseLog.sections.map((section, i) => (
+                          <div key={i} className={`p-3 rounded-lg border ${section.non_tweet_value_points >= 2 ? 'border-green-500/30 bg-green-500/10' : 'border-yellow-500/30 bg-yellow-500/10'}`}>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-foreground">{section.name}</span>
+                              <span className={`text-sm font-bold ${section.non_tweet_value_points >= 2 ? 'text-green-500' : 'text-yellow-500'}`}>
+                                {section.non_tweet_value_points} value points
+                              </span>
+                            </div>
+                            <div className="mt-1 h-2 bg-secondary rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full ${section.non_tweet_value_points >= 2 ? 'bg-green-500' : 'bg-yellow-500'}`}
+                                style={{ width: `${Math.min(section.non_tweet_value_points * 50, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>

@@ -32,6 +32,21 @@ interface AlignmentChecklist {
   original_claims_count: number;
 }
 
+interface ToneSummary {
+  one_sentence_voice: string;
+  tone_rules: string[];
+  do_phrases: string[];
+  dont_phrases: string[];
+  cadence_notes: string[];
+  example_lines: string[];
+}
+
+interface ContextUseLog {
+  tweet_proof_items_used: number;
+  tweet_proof_items: string[];
+  sections: { name: string; non_tweet_value_points: number }[];
+}
+
 interface ValidationResult {
   passed: boolean;
   issues: string[];
@@ -315,51 +330,152 @@ Return ONLY valid JSON.`
   }
 }
 
-// Validate script against hard rules
-function validateScript(script: string, alignedClaims: SupportedClaim[], tweets: string): ValidationResult {
+// Stage 3: Tone Distillation - Extract pure style/voice from tweets
+async function runToneDistillationStage(tweets: string): Promise<ToneSummary> {
+  const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+  
+  const defaultTone: ToneSummary = {
+    one_sentence_voice: "Professional yet conversational tone",
+    tone_rules: [],
+    do_phrases: [],
+    dont_phrases: [],
+    cadence_notes: [],
+    example_lines: []
+  };
+
+  if (!ANTHROPIC_API_KEY || !tweets || tweets.trim().length === 0) {
+    console.log("No tweets provided for tone distillation, using defaults");
+    return defaultTone;
+  }
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 2000,
+        messages: [
+          {
+            role: "user",
+            content: `You are a voice/tone analyst. Extract PURE STYLE PATTERNS from these tweets. 
+
+CRITICAL: This is STYLE ONLY. Do NOT extract:
+- Facts, statistics, or claims
+- Proof points or evidence
+- Specific examples or case studies
+- Anything that could be used as "proof" in content
+
+ONLY extract writing patterns, cadence, and personality.
+
+TWEETS:
+${tweets}
+
+Return a JSON object with these fields (respect hard caps):
+{
+  "one_sentence_voice": "A single sentence describing the overall voice/personality",
+  "tone_rules": ["max 10 rules about HOW they write - e.g., 'Uses short punchy sentences', 'Starts with questions'"],
+  "do_phrases": ["max 10 phrases/words they frequently use"],
+  "dont_phrases": ["max 10 phrases/words they avoid or wouldn't use"],
+  "cadence_notes": ["Notes about rhythm, paragraph length, sentence structure"],
+  "example_lines": ["max 6 short example lines that capture the style - STRIP any facts/stats"]
+}
+
+HARD CAPS: 
+- tone_rules: max 10 items
+- do_phrases: max 10 items  
+- dont_phrases: max 10 items
+- example_lines: max 6 items
+
+Return ONLY valid JSON.`
+          }
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Tone distillation failed:", response.status);
+      return defaultTone;
+    }
+
+    const data = await response.json();
+    const text = data.content?.[0]?.text || "{}";
+    
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const result = JSON.parse(jsonMatch[0]);
+      return {
+        one_sentence_voice: result.one_sentence_voice || defaultTone.one_sentence_voice,
+        tone_rules: (result.tone_rules || []).slice(0, 10),
+        do_phrases: (result.do_phrases || []).slice(0, 10),
+        dont_phrases: (result.dont_phrases || []).slice(0, 10),
+        cadence_notes: result.cadence_notes || [],
+        example_lines: (result.example_lines || []).slice(0, 6),
+      };
+    }
+
+    return defaultTone;
+  } catch (error) {
+    console.error("Tone distillation error:", error);
+    return defaultTone;
+  }
+}
+
+// Validate script against hard rules - now includes tweet-proof checks
+function validateScript(
+  script: string, 
+  alignedClaims: SupportedClaim[], 
+  contextUseLog: ContextUseLog
+): ValidationResult {
   const issues: string[] = [];
 
-  // Rule 1: Check if tweets are being used as evidence (not just voice)
-  const tweetSnippets = tweets.split('\n').filter(t => t.trim().length > 20);
-  for (const snippet of tweetSnippets) {
-    const shortSnippet = snippet.slice(0, 50);
-    if (script.toLowerCase().includes("studies show") || 
-        script.toLowerCase().includes("research proves") ||
-        script.toLowerCase().includes("data shows")) {
-      // Check if the claim near these phrases is backed by a source
-      const claimUrls = alignedClaims.map(c => c.source_url);
-      if (claimUrls.length === 0) {
-        issues.push("Script contains factual claims without research backing");
-      }
-    }
+  // Rule 1: Max 2 tweet-based proof items
+  if (contextUseLog.tweet_proof_items_used > 2) {
+    issues.push(`Too many tweet-based proof items (${contextUseLog.tweet_proof_items_used}/2 max)`);
   }
 
   // Rule 2: Each section needs 2+ non-tweet value points
-  const sections = script.split(/#{2,3}\s/);
-  for (let i = 1; i < sections.length; i++) {
-    const section = sections[i];
-    const hasStatistic = /\d+%|\d+x|\$\d+/.test(section);
-    const hasMechanism = /step|process|method|framework|system/i.test(section);
-    const hasExample = /example|case study|client|result/i.test(section);
-    
-    if (!hasStatistic && !hasMechanism && !hasExample) {
-      issues.push(`Section ${i} may lack concrete value points (mechanisms/steps/examples)`);
+  for (const section of contextUseLog.sections) {
+    if (section.non_tweet_value_points < 2) {
+      issues.push(`${section.name} section has only ${section.non_tweet_value_points} non-tweet value points (need 2+)`);
     }
   }
 
-  // Rule 3: Factual claims need source attribution
+  // Rule 3: Check for unsourced factual claims
   const factualPatterns = [
     /\d+%\s+of/gi,
     /studies\s+show/gi,
     /research\s+(indicates|shows|proves)/gi,
     /according\s+to/gi,
+    /data\s+shows/gi,
   ];
   
+  let factualClaimCount = 0;
   for (const pattern of factualPatterns) {
     const matches = script.match(pattern);
-    if (matches && matches.length > alignedClaims.length) {
-      issues.push("More factual claims in script than research-backed claims available");
-      break;
+    if (matches) {
+      factualClaimCount += matches.length;
+    }
+  }
+  
+  if (factualClaimCount > alignedClaims.length) {
+    issues.push("More factual claims in script than research-backed claims available");
+  }
+
+  // Rule 4: No direct tweet quotes (check for quotation patterns that look like tweets)
+  const tweetQuotePatterns = [
+    /"[^"]{50,}"/g, // Long quoted text
+    /as I tweeted/gi,
+    /I wrote on (twitter|x)/gi,
+  ];
+  
+  for (const pattern of tweetQuotePatterns) {
+    if (pattern.test(script)) {
+      issues.push("Possible direct tweet quote detected - paraphrase instead");
     }
   }
 
@@ -369,15 +485,16 @@ function validateScript(script: string, alignedClaims: SupportedClaim[], tweets:
   };
 }
 
-// Stage 3: Script Generation with validation
+// Stage 4: Script Generation with tone summary and validation
 async function runScriptStage(
   topic: string,
   contextProfile: any,
+  toneSummary: ToneSummary,
   tweets: string,
   constraints: any,
   researchPack: ResearchPack,
   alignedClaims: SupportedClaim[]
-): Promise<{ script: string; validation: ValidationResult }> {
+): Promise<{ script: string; validation: ValidationResult; contextUseLog: ContextUseLog }> {
   const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
   
   if (!ANTHROPIC_API_KEY) {
@@ -417,21 +534,43 @@ Transformation Promise:
 
 CTA: ${vsl.pricing?.value_justification || 'Take action now'}
 
-=== VOICE EXAMPLES (USE FOR PHRASING/CADENCE ONLY - NOT AS PROOF) ===
-${tweets || 'No voice examples provided'}
+=== EXTRACTED TONE/VOICE (USE FOR STYLE) ===
+Voice Summary: ${toneSummary.one_sentence_voice}
+
+Tone Rules:
+${toneSummary.tone_rules.map((r, i) => `${i + 1}. ${r}`).join('\n')}
+
+Do Use These Phrases/Patterns:
+${toneSummary.do_phrases.join(', ') || 'None specified'}
+
+Avoid These Phrases/Patterns:
+${toneSummary.dont_phrases.join(', ') || 'None specified'}
+
+Cadence Notes:
+${toneSummary.cadence_notes.join('; ') || 'Natural flow'}
+
+Example Lines (for style reference):
+${toneSummary.example_lines.map(l => `"${l}"`).join('\n')}
 
 === HARD RULES - MUST FOLLOW ===
-1. TWEETS ARE VOICE ONLY: Use tweet examples ONLY to match phrasing, rhythm, and personal angle. NEVER cite tweets as evidence or proof.
+1. TWEETS ARE FOR VOICE ONLY: Use the tone summary above to match phrasing and style. Do NOT cite tweets as evidence.
 
-2. EACH SECTION MUST HAVE 2+ VALUE POINTS: Every major section needs at least 2 non-tweet value points:
+2. MAX 2 TWEET-BASED PROOF MOMENTS: You may use personal observations/experiences from tweets at most 2 times in the entire script. These MUST be:
+   - Paraphrased (no direct quotes)
+   - Framed as "personal observation" or "in my experience" - NOT as objective fact
+   - Noted in your output
+
+3. EACH SECTION MUST HAVE 2+ NON-TWEET VALUE POINTS: Every major section needs at least 2 value points that are NOT from tweets:
    - A mechanism or step-by-step process
    - A specific pitfall or mistake to avoid
    - An original example or case study
    - A research-backed statistic (from the claims above)
 
-3. FACTUAL CLAIMS NEED SOURCES: Any claim with numbers, percentages, "studies show", or "research indicates" MUST reference one of the research-backed claims above. If you can't tie it to a source, remove it.
+4. FACTUAL CLAIMS NEED SOURCES: Any claim with numbers, percentages, "studies show", or "research indicates" MUST reference one of the research-backed claims above. If you can't tie it to a source, DO NOT USE IT.
 
-4. NO GENERIC ADVICE: Every point must be specific to THIS audience and THIS offer. No "work smarter not harder" platitudes.
+5. NO STATS/PERCENTAGES WITHOUT SOURCES: If no external sources are provided, do NOT use any statistics or "studies show/data shows" language.
+
+6. NO GENERIC ADVICE: Every point must be specific to THIS audience and THIS offer.
 
 === SCRIPT STRUCTURE ===
 Write a ${targetMinutes}-minute script with:
@@ -445,16 +584,27 @@ Write a ${targetMinutes}-minute script with:
 7. OBJECTION HANDLING - Address naturally with data
 8. CTA (30-60 seconds) - Clear next step tied to transformation
 
-=== FORMAT ===
-- Use ## for section headers
-- Include [TIMESTAMP: X:XX] markers
-- Add [CITE: source_url] after any research-backed claim
-- Do NOT include visual cues or production notes
-- Write conversationally but backed by research
+=== OUTPUT FORMAT ===
+Return a JSON object with:
+{
+  "script": "The complete script text with ## headers and [TIMESTAMP] markers",
+  "context_use_log": {
+    "tweet_proof_items_used": <number 0-2>,
+    "tweet_proof_items": ["brief description of each tweet-based proof used"],
+    "sections": [
+      { "name": "Hook", "non_tweet_value_points": <number> },
+      { "name": "Problem", "non_tweet_value_points": <number> },
+      { "name": "Mechanism", "non_tweet_value_points": <number> },
+      { "name": "Steps", "non_tweet_value_points": <number> },
+      { "name": "Mistakes", "non_tweet_value_points": <number> },
+      { "name": "CTA", "non_tweet_value_points": <number> }
+    ]
+  }
+}
 
-Write the complete script now:`;
+Return ONLY valid JSON.`;
 
-  console.log("Generating script with research backing...");
+  console.log("Generating script with tone summary...");
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -479,28 +629,62 @@ Write the complete script now:`;
   }
 
   const data = await response.json();
-  let script = data.content?.[0]?.text || "";
+  const text = data.content?.[0]?.text || "";
+  
+  // Parse JSON response
+  let script = "";
+  let contextUseLog: ContextUseLog = {
+    tweet_proof_items_used: 0,
+    tweet_proof_items: [],
+    sections: [
+      { name: "Hook", non_tweet_value_points: 2 },
+      { name: "Problem", non_tweet_value_points: 2 },
+      { name: "Mechanism", non_tweet_value_points: 2 },
+      { name: "Steps", non_tweet_value_points: 2 },
+      { name: "Mistakes", non_tweet_value_points: 2 },
+      { name: "CTA", non_tweet_value_points: 2 }
+    ]
+  };
+
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      script = parsed.script || text;
+      if (parsed.context_use_log) {
+        contextUseLog = parsed.context_use_log;
+      }
+    } else {
+      script = text;
+    }
+  } catch {
+    console.log("Could not parse JSON response, using raw text");
+    script = text;
+  }
 
   // Validate the script
-  let validation = validateScript(script, alignedClaims, tweets);
+  let validation = validateScript(script, alignedClaims, contextUseLog);
 
   // If validation fails, run bias corrector pass
   if (!validation.passed) {
     console.log("Validation failed, running bias corrector...");
-    script = await runBiasCorrectorPass(script, validation.issues, alignedClaims, ANTHROPIC_API_KEY);
-    validation = validateScript(script, alignedClaims, tweets);
+    const corrected = await runBiasCorrectorPass(script, validation.issues, alignedClaims, contextUseLog, ANTHROPIC_API_KEY);
+    script = corrected.script;
+    contextUseLog = corrected.contextUseLog;
+    validation = validateScript(script, alignedClaims, contextUseLog);
   }
 
-  return { script, validation };
+  return { script, validation, contextUseLog };
 }
 
-// Bias Corrector Pass
+// Bias Corrector Pass - now returns updated context use log
 async function runBiasCorrectorPass(
   script: string, 
   issues: string[], 
   alignedClaims: SupportedClaim[],
+  contextUseLog: ContextUseLog,
   apiKey: string
-): Promise<string> {
+): Promise<{ script: string; contextUseLog: ContextUseLog }> {
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -526,14 +710,28 @@ ${issues.map((issue, i) => `${i + 1}. ${issue}`).join('\n')}
 AVAILABLE RESEARCH-BACKED CLAIMS:
 ${alignedClaims.map((c, i) => `[${i + 1}] ${c.claim} (Source: ${c.source_url})`).join('\n')}
 
+CURRENT CONTEXT LOG:
+${JSON.stringify(contextUseLog, null, 2)}
+
 INSTRUCTIONS:
 1. Fix each validation issue
-2. Remove any unsourced factual claims (statistics, "studies show", etc.)
-3. Add more concrete value points to thin sections (mechanisms, steps, examples)
-4. Ensure every research claim has a [CITE: url] tag
-5. Preserve the voice and flow of the original
+2. If there are too many tweet-proof items (>2), remove some and replace with research claims or original examples
+3. If sections lack non-tweet value points, add mechanisms/steps/pitfalls/examples
+4. Remove any unsourced factual claims (statistics, "studies show", etc.)
+5. Ensure every research claim has a [CITE: url] tag
+6. Preserve the voice and flow of the original
 
-Return the COMPLETE corrected script with all fixes applied.`
+Return a JSON object:
+{
+  "script": "The COMPLETE corrected script",
+  "context_use_log": {
+    "tweet_proof_items_used": <updated count>,
+    "tweet_proof_items": [<updated list>],
+    "sections": [<updated section counts>]
+  }
+}
+
+Return ONLY valid JSON.`
           }
         ],
       }),
@@ -541,14 +739,29 @@ Return the COMPLETE corrected script with all fixes applied.`
 
     if (!response.ok) {
       console.error("Bias corrector failed:", response.status);
-      return script;
+      return { script, contextUseLog };
     }
 
     const data = await response.json();
-    return data.content?.[0]?.text || script;
+    const text = data.content?.[0]?.text || "";
+    
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return {
+          script: parsed.script || script,
+          contextUseLog: parsed.context_use_log || contextUseLog
+        };
+      }
+    } catch {
+      console.log("Could not parse corrector response");
+    }
+    
+    return { script, contextUseLog };
   } catch (error) {
     console.error("Bias corrector error:", error);
-    return script;
+    return { script, contextUseLog };
   }
 }
 
@@ -560,7 +773,7 @@ serve(async (req) => {
   try {
     const { topic, context_profile, tweets, constraints } = await req.json();
     
-    console.log("=== GENERATE SCRIPT V3 ===");
+    console.log("=== GENERATE SCRIPT V3 (4-STAGE) ===");
     console.log("Topic:", topic || context_profile?.video_title);
 
     // Stage 1: Research
@@ -576,11 +789,17 @@ serve(async (req) => {
     const { alignedClaims, checklist } = await runAlignmentStage(researchPack, context_profile);
     console.log(`Alignment kept ${alignedClaims.length} of ${researchPack.claims.length} claims`);
 
-    // Stage 3: Script Generation
-    console.log("Stage 3: Generating script...");
-    const { script, validation } = await runScriptStage(
+    // Stage 3: Tone Distillation (NEW)
+    console.log("Stage 3: Running tone distillation...");
+    const toneSummary = await runToneDistillationStage(tweets || "");
+    console.log(`Tone distilled: "${toneSummary.one_sentence_voice}"`);
+
+    // Stage 4: Script Generation
+    console.log("Stage 4: Generating script...");
+    const { script, validation, contextUseLog } = await runScriptStage(
       topic,
       context_profile,
+      toneSummary,
       tweets || "",
       constraints || {},
       researchPack,
@@ -595,6 +814,8 @@ serve(async (req) => {
         claims: alignedClaims,
       },
       alignment_checklist: checklist,
+      tone_summary: toneSummary,
+      context_use_log: contextUseLog,
       validation: validation,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
