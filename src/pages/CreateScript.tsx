@@ -78,6 +78,8 @@ const CreateScript = () => {
           voiceData,
           researchPack: data.research_pack,
           alignmentChecklist: data.alignment_checklist,
+          toneSummary: data.tone_summary,
+          contextUseLog: data.context_use_log,
           validation: data.validation,
         } 
       });

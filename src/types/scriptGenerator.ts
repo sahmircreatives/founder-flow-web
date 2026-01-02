@@ -79,6 +79,23 @@ export interface VoiceData {
   dont_phrases: string[];
 }
 
+// Tone Summary (extracted from tweets - style only)
+export interface ToneSummary {
+  one_sentence_voice: string;
+  tone_rules: string[];
+  do_phrases: string[];
+  dont_phrases: string[];
+  cadence_notes: string[];
+  example_lines: string[];
+}
+
+// Context Use Log (tracks tweet usage in script)
+export interface ContextUseLog {
+  tweet_proof_items_used: number;
+  tweet_proof_items: string[];
+  sections: { name: string; non_tweet_value_points: number }[];
+}
+
 // Generation Request
 export interface GenerateScriptRequest {
   business: BusinessContext;
@@ -90,4 +107,6 @@ export interface GenerateScriptRequest {
 export interface GenerateScriptResponse {
   context_profile: BusinessContext;
   script: string;
+  tone_summary?: ToneSummary;
+  context_use_log?: ContextUseLog;
 }
