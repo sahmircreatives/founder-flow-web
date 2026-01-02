@@ -55,11 +55,16 @@ const CreateScript = () => {
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-script', {
+      const { data, error } = await supabase.functions.invoke('generate-script-v3', {
         body: {
-          business: businessContext,
-          voice: voiceData,
-          variation: 'A',
+          topic: businessContext.video_title,
+          context_profile: businessContext,
+          tweets: voiceData.tweet_examples,
+          constraints: {
+            tone_goals: voiceData.tone_goals,
+            do_phrases: voiceData.do_phrases,
+            dont_phrases: voiceData.dont_phrases,
+          },
         },
       });
 
@@ -68,9 +73,12 @@ const CreateScript = () => {
       navigate('/script', { 
         state: { 
           script: data.script, 
-          contextProfile: data.context_profile,
+          contextProfile: businessContext,
           businessContext,
           voiceData,
+          researchPack: data.research_pack,
+          alignmentChecklist: data.alignment_checklist,
+          validation: data.validation,
         } 
       });
     } catch (error: any) {
