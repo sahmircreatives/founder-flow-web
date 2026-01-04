@@ -72,7 +72,7 @@ const emptyTemplate = {
       competition_level: "low|medium|high",
       market_maturity: "emerging|growing|mature|declining"
     },
-    vsl_specifications: {
+    script_specifications: {
       target_length: {
         minutes: 0,
         range: "30-45|45-60|60-75|75-90"

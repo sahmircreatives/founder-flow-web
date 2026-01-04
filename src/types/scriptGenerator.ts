@@ -62,7 +62,7 @@ export interface BusinessContext {
       competition_level: 'low' | 'medium' | 'high';
       market_maturity: 'emerging' | 'growing' | 'mature' | 'declining';
     };
-    vsl_specifications: {
+    script_specifications: {
       target_length: {
         minutes: number;
         range: '15-60s' | '5-6m' | '8-15m' | '20-30m';

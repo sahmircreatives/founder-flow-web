@@ -502,7 +502,7 @@ async function runScriptStage(
   }
 
   const vsl = contextProfile?.vsl_context || {};
-  const targetMinutes = vsl.vsl_specifications?.target_length?.minutes || 10;
+  const targetMinutes = vsl.script_specifications?.target_length?.minutes || 10;
 
   const scriptPrompt = `You are an expert YouTube scriptwriter creating a research-backed, high-converting script.
 

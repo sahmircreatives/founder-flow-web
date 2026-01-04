@@ -45,7 +45,7 @@ serve(async (req) => {
 
     const vsl = business.vsl_context;
     const videoTitle = business.video_title || "Untitled Video";
-    const targetMinutes = vsl.vsl_specifications?.target_length?.minutes || 10;
+    const targetMinutes = vsl.script_specifications?.target_length?.minutes || 10;
 
     // Build the mega prompt
     const megaPrompt = `${SCRIPT_FRAMEWORK}

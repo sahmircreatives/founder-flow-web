@@ -68,7 +68,7 @@ const initialBusinessContext: BusinessContext = {
       competition_level: 'medium',
       market_maturity: 'growing',
     },
-    vsl_specifications: {
+    script_specifications: {
       target_length: {
         minutes: 5,
         range: '5-6m',
