@@ -52,7 +52,7 @@ Template: ${JSON.stringify(template, null, 2)}`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-2-latest',
+        model: 'grok-4-0709',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
@@ -94,7 +94,7 @@ Template: ${JSON.stringify(template, null, 2)}`;
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'grok-2-latest',
+          model: 'grok-4-0709',
           messages: [
             { role: 'system', content: 'Fix this into valid JSON matching the template exactly. Return JSON only. No markdown. No code fences.' },
             { role: 'user', content: `Template: ${JSON.stringify(template)}\n\nBroken JSON to fix:\n${content}` }
