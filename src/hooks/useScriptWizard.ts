@@ -1,5 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { BusinessContext, VoiceData } from '@/types/scriptGenerator';
+
+const STORAGE_KEY_BUSINESS = 'script_wizard_business_context';
+const STORAGE_KEY_VOICE = 'script_wizard_voice_data';
 
 // Initial empty state for business context
 const initialBusinessContext: BusinessContext = {
@@ -81,164 +84,57 @@ const initialVoiceData: VoiceData = {
   dont_phrases: [],
 };
 
+// Load from localStorage
+const loadFromStorage = <T>(key: string, fallback: T): T => {
+  try {
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (e) {
+    console.error(`Failed to load ${key} from localStorage:`, e);
+  }
+  return fallback;
+};
+
+// Save to localStorage
+const saveToStorage = <T>(key: string, value: T) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    console.error(`Failed to save ${key} to localStorage:`, e);
+  }
+};
+
 export const useScriptWizard = () => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [businessContext, setBusinessContext] = useState<BusinessContext>(initialBusinessContext);
-  const [voiceData, setVoiceData] = useState<VoiceData>(initialVoiceData);
+  const [businessContext, setBusinessContextState] = useState<BusinessContext>(() => 
+    loadFromStorage(STORAGE_KEY_BUSINESS, initialBusinessContext)
+  );
+  const [voiceData, setVoiceDataState] = useState<VoiceData>(() => 
+    loadFromStorage(STORAGE_KEY_VOICE, initialVoiceData)
+  );
 
-  // Total steps: Business sections (1-5) + Voice Data (6) + Review (7)
-  const totalSteps = 7;
+  // 3 steps: Business Context, Voice, Review
+  const totalSteps = 3;
 
-  const updateVideoTitle = useCallback((title: string) => {
-    setBusinessContext(prev => ({
-      ...prev,
-      video_title: title,
-    }));
-  }, []);
+  // Persist businessContext to localStorage
+  useEffect(() => {
+    saveToStorage(STORAGE_KEY_BUSINESS, businessContext);
+  }, [businessContext]);
 
-  const updateProductService = useCallback((field: keyof BusinessContext['vsl_context']['product_service'], value: string) => {
-    setBusinessContext(prev => ({
-      ...prev,
-      vsl_context: {
-        ...prev.vsl_context,
-        product_service: {
-          ...prev.vsl_context.product_service,
-          [field]: value,
-        },
-      },
-    }));
-  }, []);
+  // Persist voiceData to localStorage
+  useEffect(() => {
+    saveToStorage(STORAGE_KEY_VOICE, voiceData);
+  }, [voiceData]);
 
-  const updateDemographics = useCallback((field: keyof BusinessContext['vsl_context']['target_audience']['demographics'], value: string) => {
-    setBusinessContext(prev => ({
-      ...prev,
-      vsl_context: {
-        ...prev.vsl_context,
-        target_audience: {
-          ...prev.vsl_context.target_audience,
-          demographics: {
-            ...prev.vsl_context.target_audience.demographics,
-            [field]: value,
-          },
-        },
-      },
-    }));
-  }, []);
-
-  const updatePsychographics = useCallback((field: keyof BusinessContext['vsl_context']['target_audience']['psychographics'], value: string | string[]) => {
-    setBusinessContext(prev => ({
-      ...prev,
-      vsl_context: {
-        ...prev.vsl_context,
-        target_audience: {
-          ...prev.vsl_context.target_audience,
-          psychographics: {
-            ...prev.vsl_context.target_audience.psychographics,
-            [field]: value,
-          },
-        },
-      },
-    }));
-  }, []);
-
-  const updateCoreProblem = useCallback((field: keyof BusinessContext['vsl_context']['core_problem'], value: string) => {
-    setBusinessContext(prev => ({
-      ...prev,
-      vsl_context: {
-        ...prev.vsl_context,
-        core_problem: {
-          ...prev.vsl_context.core_problem,
-          [field]: value,
-        },
-      },
-    }));
-  }, []);
-
-  const updateTransformationFromState = useCallback((field: keyof BusinessContext['vsl_context']['transformation_promise']['from_state'], value: string | string[]) => {
-    setBusinessContext(prev => ({
-      ...prev,
-      vsl_context: {
-        ...prev.vsl_context,
-        transformation_promise: {
-          ...prev.vsl_context.transformation_promise,
-          from_state: {
-            ...prev.vsl_context.transformation_promise.from_state,
-            [field]: value,
-          },
-        },
-      },
-    }));
-  }, []);
-
-  const updateTransformationToState = useCallback((field: keyof BusinessContext['vsl_context']['transformation_promise']['to_state'], value: string | string[]) => {
-    setBusinessContext(prev => ({
-      ...prev,
-      vsl_context: {
-        ...prev.vsl_context,
-        transformation_promise: {
-          ...prev.vsl_context.transformation_promise,
-          to_state: {
-            ...prev.vsl_context.transformation_promise.to_state,
-            [field]: value,
-          },
-        },
-      },
-    }));
-  }, []);
-
-  const updateTransformationMeta = useCallback((field: 'timeline' | 'success_metrics', value: string | string[]) => {
-    setBusinessContext(prev => ({
-      ...prev,
-      vsl_context: {
-        ...prev.vsl_context,
-        transformation_promise: {
-          ...prev.vsl_context.transformation_promise,
-          [field]: value,
-        },
-      },
-    }));
-  }, []);
-
-  const updatePricing = useCallback((field: keyof BusinessContext['vsl_context']['pricing'], value: any) => {
-    setBusinessContext(prev => ({
-      ...prev,
-      vsl_context: {
-        ...prev.vsl_context,
-        pricing: {
-          ...prev.vsl_context.pricing,
-          [field]: value,
-        },
-      },
-    }));
-  }, []);
-
-  const updateIndustryNiche = useCallback((field: keyof BusinessContext['vsl_context']['industry_niche'], value: string) => {
-    setBusinessContext(prev => ({
-      ...prev,
-      vsl_context: {
-        ...prev.vsl_context,
-        industry_niche: {
-          ...prev.vsl_context.industry_niche,
-          [field]: value,
-        },
-      },
-    }));
-  }, []);
-
-  const updateVslSpecs = useCallback((minutes: number, range: '15-60s' | '5-6m' | '8-15m' | '20-30m') => {
-    setBusinessContext(prev => ({
-      ...prev,
-      vsl_context: {
-        ...prev.vsl_context,
-        vsl_specifications: {
-          target_length: { minutes, range },
-        },
-      },
-    }));
+  // Bulk update for business context (used by Grok auto-fill)
+  const setBusinessContext = useCallback((context: BusinessContext) => {
+    setBusinessContextState(context);
   }, []);
 
   const updateVoiceData = useCallback((field: keyof VoiceData, value: string | string[]) => {
-    setVoiceData(prev => ({
+    setVoiceDataState(prev => ({
       ...prev,
       [field]: value,
     }));
@@ -264,8 +160,10 @@ export const useScriptWizard = () => {
 
   const reset = useCallback(() => {
     setCurrentStep(1);
-    setBusinessContext(initialBusinessContext);
-    setVoiceData(initialVoiceData);
+    setBusinessContextState(initialBusinessContext);
+    setVoiceDataState(initialVoiceData);
+    localStorage.removeItem(STORAGE_KEY_BUSINESS);
+    localStorage.removeItem(STORAGE_KEY_VOICE);
   }, []);
 
   return {
@@ -273,17 +171,7 @@ export const useScriptWizard = () => {
     totalSteps,
     businessContext,
     voiceData,
-    updateVideoTitle,
-    updateProductService,
-    updateDemographics,
-    updatePsychographics,
-    updateCoreProblem,
-    updateTransformationFromState,
-    updateTransformationToState,
-    updateTransformationMeta,
-    updatePricing,
-    updateIndustryNiche,
-    updateVslSpecs,
+    setBusinessContext,
     updateVoiceData,
     nextStep,
     prevStep,

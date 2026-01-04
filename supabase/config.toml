@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.generate-script-v3]
 verify_jwt = false
+
+[functions.grok-fill-business]
+verify_jwt = false

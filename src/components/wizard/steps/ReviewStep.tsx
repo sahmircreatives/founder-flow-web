@@ -14,50 +14,18 @@ const ReviewStep = ({ businessContext, voiceData, onEditStep }: ReviewStepProps)
   const sections = [
     {
       step: 1,
-      title: 'Your Offer',
+      title: 'Business Context',
       items: [
-        { label: 'Name', value: vsl_context.product_service.name },
+        { label: 'Video Title', value: businessContext.video_title },
+        { label: 'Offer Name', value: vsl_context.product_service.name },
         { label: 'Type', value: vsl_context.product_service.type },
-        { label: 'Description', value: vsl_context.product_service.description },
+        { label: 'Industry', value: vsl_context.industry_niche.primary_industry },
+        { label: 'Target Audience', value: vsl_context.target_audience.demographics.profession },
+        { label: 'Primary Pain', value: vsl_context.core_problem.primary_pain_point },
       ],
     },
     {
       step: 2,
-      title: 'Target Audience',
-      items: [
-        { label: 'Age Range', value: vsl_context.target_audience.demographics.age_range },
-        { label: 'Profession', value: vsl_context.target_audience.demographics.profession },
-        { label: 'Values', value: vsl_context.target_audience.psychographics.values.join(', ') },
-      ],
-    },
-    {
-      step: 3,
-      title: 'Core Problem',
-      items: [
-        { label: 'Primary Pain', value: vsl_context.core_problem.primary_pain_point },
-        { label: 'Emotional Impact', value: vsl_context.core_problem.emotional_impact },
-      ],
-    },
-    {
-      step: 4,
-      title: 'Transformation',
-      items: [
-        { label: 'Desired Outcome', value: vsl_context.transformation_promise.to_state.desired_outcome },
-        { label: 'Timeline', value: vsl_context.transformation_promise.timeline },
-        { label: 'Benefits', value: vsl_context.transformation_promise.to_state.benefits.join(', ') },
-      ],
-    },
-    {
-      step: 5,
-      title: 'Pricing & Industry',
-      items: [
-        { label: 'Price Point', value: vsl_context.pricing.price_point },
-        { label: 'Industry', value: vsl_context.industry_niche.primary_industry },
-        { label: 'VSL Length', value: vsl_context.vsl_specifications.target_length.range + ' min' },
-      ],
-    },
-    {
-      step: 6,
       title: 'Voice & Tone',
       items: [
         { label: 'Tone Goals', value: voiceData.tone_goals.join(', ') || 'Not set' },

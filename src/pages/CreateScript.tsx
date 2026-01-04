@@ -4,11 +4,7 @@ import { ArrowLeft, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import WizardProgress from '@/components/wizard/WizardProgress';
-import ProductServiceStep from '@/components/wizard/steps/ProductServiceStep';
-import TargetAudienceStep from '@/components/wizard/steps/TargetAudienceStep';
-import CoreProblemStep from '@/components/wizard/steps/CoreProblemStep';
-import TransformationStep from '@/components/wizard/steps/TransformationStep';
-import PricingIndustryStep from '@/components/wizard/steps/PricingIndustryStep';
+import BusinessContextStep from '@/components/wizard/steps/BusinessContextStep';
 import VoiceDataStep from '@/components/wizard/steps/VoiceDataStep';
 import ReviewStep from '@/components/wizard/steps/ReviewStep';
 import { useScriptWizard } from '@/hooks/useScriptWizard';
@@ -16,11 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const stepLabels = [
-  'Your Offer',
-  'Audience',
-  'Problem',
-  'Transformation',
-  'Pricing',
+  'Business Context',
   'Voice',
   'Review',
 ];
@@ -35,17 +27,7 @@ const CreateScript = () => {
     totalSteps,
     businessContext,
     voiceData,
-    updateVideoTitle,
-    updateProductService,
-    updateDemographics,
-    updatePsychographics,
-    updateCoreProblem,
-    updateTransformationFromState,
-    updateTransformationToState,
-    updateTransformationMeta,
-    updatePricing,
-    updateIndustryNiche,
-    updateVslSpecs,
+    setBusinessContext,
     updateVoiceData,
     nextStep,
     prevStep,
@@ -98,50 +80,14 @@ const CreateScript = () => {
     switch (currentStep) {
       case 1:
         return (
-          <ProductServiceStep
-            data={businessContext.vsl_context.product_service}
-            videoTitle={businessContext.video_title}
-            onUpdateTitle={updateVideoTitle}
-            onUpdate={updateProductService}
+          <BusinessContextStep
+            businessContext={businessContext}
+            onSetBusinessContext={setBusinessContext}
           />
         );
       case 2:
-        return (
-          <TargetAudienceStep
-            demographics={businessContext.vsl_context.target_audience.demographics}
-            psychographics={businessContext.vsl_context.target_audience.psychographics}
-            onUpdateDemographics={updateDemographics}
-            onUpdatePsychographics={updatePsychographics}
-          />
-        );
-      case 3:
-        return <CoreProblemStep data={businessContext.vsl_context.core_problem} onUpdate={updateCoreProblem} />;
-      case 4:
-        return (
-          <TransformationStep
-            fromState={businessContext.vsl_context.transformation_promise.from_state}
-            toState={businessContext.vsl_context.transformation_promise.to_state}
-            timeline={businessContext.vsl_context.transformation_promise.timeline}
-            successMetrics={businessContext.vsl_context.transformation_promise.success_metrics}
-            onUpdateFromState={updateTransformationFromState}
-            onUpdateToState={updateTransformationToState}
-            onUpdateMeta={updateTransformationMeta}
-          />
-        );
-      case 5:
-        return (
-          <PricingIndustryStep
-            pricing={businessContext.vsl_context.pricing}
-            industry={businessContext.vsl_context.industry_niche}
-            vslSpecs={businessContext.vsl_context.vsl_specifications}
-            onUpdatePricing={updatePricing}
-            onUpdateIndustry={updateIndustryNiche}
-            onUpdateVslSpecs={updateVslSpecs}
-          />
-        );
-      case 6:
         return <VoiceDataStep data={voiceData} onUpdate={updateVoiceData} />;
-      case 7:
+      case 3:
         return <ReviewStep businessContext={businessContext} voiceData={voiceData} onEditStep={goToStep} />;
       default:
         return null;
