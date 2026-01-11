@@ -144,7 +144,7 @@ async function extractClaimsFromResearch(researchContent: string, citations: str
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-opus-4-5-20251101",
         max_tokens: 2000,
         messages: [
           {
@@ -232,7 +232,7 @@ async function runAlignmentStage(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-opus-4-5-20251101",
         max_tokens: 3000,
         messages: [
           {
@@ -357,7 +357,7 @@ async function runToneDistillationStage(tweets: string): Promise<ToneSummary> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-opus-4-5-20251101",
         max_tokens: 2000,
         messages: [
           {
@@ -614,7 +614,7 @@ Return ONLY valid JSON.`;
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-opus-4-5-20251101",
       max_tokens: 8000,
       messages: [
         { role: "user", content: scriptPrompt }
@@ -694,7 +694,7 @@ async function runBiasCorrectorPass(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-opus-4-5-20251101",
         max_tokens: 8000,
         messages: [
           {
