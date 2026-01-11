@@ -45,11 +45,72 @@ interface ContextUseLog {
   tweet_proof_items_used: number;
   tweet_proof_items: string[];
   sections: { name: string; non_tweet_value_points: number }[];
+  rag_examples_used?: {
+    hooks: string[];
+    body: string[];
+    cta: string[];
+    proof: string[];
+    objection: string[];
+  };
 }
 
 interface ValidationResult {
   passed: boolean;
   issues: string[];
+}
+
+interface RAGExample {
+  id: string;
+  content: string;
+  source: string;
+  quality_notes: string;
+  similarity: number;
+}
+
+interface RAGResults {
+  hooks: RAGExample[];
+  body_sections: RAGExample[];
+  cta_sections: RAGExample[];
+  proof_sections: RAGExample[];
+  objection_handlers: RAGExample[];
+}
+
+// Build RAG examples section for the prompt
+function buildExamplesSection(retrieved: RAGResults): string {
+  let section = '';
+  
+  if (retrieved.hooks?.length > 0) {
+    section += `HOOK EXAMPLES:\n`;
+    retrieved.hooks.forEach((hook, i) => {
+      section += `---\nExample ${i + 1} (similarity: ${hook.similarity?.toFixed(2) || 'N/A'}):\n"${hook.content}"\nSource: ${hook.source || 'Unknown'}\n---\n`;
+    });
+    section += `↳ Pattern from: Opening structure, curiosity loop setup, pacing\n\n`;
+  }
+  
+  if (retrieved.body_sections?.length > 0) {
+    section += `BODY EXAMPLES:\n`;
+    retrieved.body_sections.forEach((body, i) => {
+      section += `---\nExample ${i + 1} (similarity: ${body.similarity?.toFixed(2) || 'N/A'}):\n"${body.content}"\nSource: ${body.source || 'Unknown'}\n---\n`;
+    });
+    section += `↳ Pattern from: How points are explained, transitions, depth of value\n\n`;
+  }
+  
+  if (retrieved.cta_sections?.length > 0) {
+    section += `CTA EXAMPLE:\n"${retrieved.cta_sections[0].content}"\nSource: ${retrieved.cta_sections[0].source || 'Unknown'}\n`;
+    section += `↳ Pattern from: Transition into offer, tone, urgency level\n\n`;
+  }
+  
+  if (retrieved.proof_sections?.length > 0) {
+    section += `PROOF EXAMPLE:\n"${retrieved.proof_sections[0].content}"\nSource: ${retrieved.proof_sections[0].source || 'Unknown'}\n`;
+    section += `↳ Pattern from: How results are presented, specificity\n\n`;
+  }
+  
+  if (retrieved.objection_handlers?.length > 0) {
+    section += `OBJECTION HANDLER EXAMPLE:\n"${retrieved.objection_handlers[0].content}"\nSource: ${retrieved.objection_handlers[0].source || 'Unknown'}\n`;
+    section += `↳ Pattern from: How objection is acknowledged and reframed\n\n`;
+  }
+  
+  return section;
 }
 
 // Stage 1: Research - Use Perplexity to get grounded sources
@@ -773,7 +834,7 @@ serve(async (req) => {
   try {
     const { topic, context_profile, tweets, constraints } = await req.json();
     
-    console.log("=== GENERATE SCRIPT V3 (4-STAGE) ===");
+    console.log("=== GENERATE SCRIPT V3 (5-STAGE WITH RAG) ===");
     console.log("Topic:", topic || context_profile?.video_title);
 
     // Stage 1: Research
@@ -789,12 +850,47 @@ serve(async (req) => {
     const { alignedClaims, checklist } = await runAlignmentStage(researchPack, context_profile);
     console.log(`Alignment kept ${alignedClaims.length} of ${researchPack.claims.length} claims`);
 
-    // Stage 3: Tone Distillation (NEW)
+    // Stage 3: Tone Distillation
     console.log("Stage 3: Running tone distillation...");
     const toneSummary = await runToneDistillationStage(tweets || "");
     console.log(`Tone distilled: "${toneSummary.one_sentence_voice}"`);
 
-    // Stage 4: Script Generation
+    // Stage 3.5: RAG Retrieval
+    console.log("Stage 3.5: Running RAG retrieval...");
+    let ragResults: RAGResults = { hooks: [], body_sections: [], cta_sections: [], proof_sections: [], objection_handlers: [] };
+    let ragExamplesSection = "";
+    
+    try {
+      const bc = context_profile?.business_context || {};
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+      
+      if (SUPABASE_URL) {
+        const ragResponse = await fetch(`${SUPABASE_URL}/functions/v1/rag-retrieve`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}` },
+          body: JSON.stringify({
+            video_title: topic || context_profile?.video_title || "",
+            niche: bc.industry?.niche || "",
+            sub_niche: bc.industry?.sub_niche || "",
+            offer_type: bc.offer?.offer_type || "",
+            profession: bc.icp?.demographics?.profession_or_role || "",
+            primary_problem: bc.icp_pain_points?.primary_problem || "",
+            first_objection: bc.icp_pain_points?.common_objections?.[0] || "",
+          }),
+        });
+        
+        if (ragResponse.ok) {
+          const ragData = await ragResponse.json();
+          ragResults = ragData.retrieved_examples || ragResults;
+          ragExamplesSection = buildExamplesSection(ragResults);
+          console.log(`RAG retrieved: ${ragResults.hooks.length} hooks, ${ragResults.body_sections.length} body, ${ragResults.cta_sections.length} cta`);
+        }
+      }
+    } catch (ragError) {
+      console.log("RAG retrieval failed (continuing without):", ragError);
+    }
+
+    // Stage 4: Script Generation (with RAG examples)
     console.log("Stage 4: Generating script...");
     const { script, validation, contextUseLog } = await runScriptStage(
       topic,
@@ -803,7 +899,9 @@ serve(async (req) => {
       tweets || "",
       constraints || {},
       researchPack,
-      alignedClaims
+      alignedClaims,
+      ragExamplesSection,
+      ragResults
     );
     console.log("Script generated, validation passed:", validation.passed);
 
