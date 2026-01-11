@@ -5,3 +5,12 @@ verify_jwt = false
 
 [functions.grok-fill-business]
 verify_jwt = false
+
+[functions.rag-generate-embedding]
+verify_jwt = false
+
+[functions.rag-chunk-transcript]
+verify_jwt = false
+
+[functions.rag-retrieve]
+verify_jwt = false

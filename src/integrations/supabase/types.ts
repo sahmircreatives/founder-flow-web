@@ -14,13 +14,204 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      rag_body_sections: {
+        Row: {
+          content: string
+          created_at: string | null
+          embedding: string | null
+          id: string
+          niche: string | null
+          offer_type: string | null
+          quality_notes: string | null
+          source: string | null
+          sub_niche: string | null
+          topic_tags: string[] | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          niche?: string | null
+          offer_type?: string | null
+          quality_notes?: string | null
+          source?: string | null
+          sub_niche?: string | null
+          topic_tags?: string[] | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          niche?: string | null
+          offer_type?: string | null
+          quality_notes?: string | null
+          source?: string | null
+          sub_niche?: string | null
+          topic_tags?: string[] | null
+        }
+        Relationships: []
+      }
+      rag_cta_sections: {
+        Row: {
+          content: string
+          created_at: string | null
+          cta_type: string | null
+          embedding: string | null
+          id: string
+          offer_type: string | null
+          quality_notes: string | null
+          source: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          cta_type?: string | null
+          embedding?: string | null
+          id?: string
+          offer_type?: string | null
+          quality_notes?: string | null
+          source?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          cta_type?: string | null
+          embedding?: string | null
+          id?: string
+          offer_type?: string | null
+          quality_notes?: string | null
+          source?: string | null
+        }
+        Relationships: []
+      }
+      rag_hooks: {
+        Row: {
+          content: string
+          created_at: string | null
+          embedding: string | null
+          id: string
+          niche: string | null
+          offer_type: string | null
+          quality_notes: string | null
+          source: string | null
+          sub_niche: string | null
+          topic_tags: string[] | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          niche?: string | null
+          offer_type?: string | null
+          quality_notes?: string | null
+          source?: string | null
+          sub_niche?: string | null
+          topic_tags?: string[] | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          niche?: string | null
+          offer_type?: string | null
+          quality_notes?: string | null
+          source?: string | null
+          sub_niche?: string | null
+          topic_tags?: string[] | null
+        }
+        Relationships: []
+      }
+      rag_objection_handlers: {
+        Row: {
+          content: string
+          created_at: string | null
+          embedding: string | null
+          id: string
+          objection_type: string | null
+          offer_type: string | null
+          quality_notes: string | null
+          source: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          objection_type?: string | null
+          offer_type?: string | null
+          quality_notes?: string | null
+          source?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          objection_type?: string | null
+          offer_type?: string | null
+          quality_notes?: string | null
+          source?: string | null
+        }
+        Relationships: []
+      }
+      rag_proof_sections: {
+        Row: {
+          content: string
+          created_at: string | null
+          embedding: string | null
+          id: string
+          niche: string | null
+          proof_type: string | null
+          quality_notes: string | null
+          source: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          niche?: string | null
+          proof_type?: string | null
+          quality_notes?: string | null
+          source?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          niche?: string | null
+          proof_type?: string | null
+          quality_notes?: string | null
+          source?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      match_rag_documents: {
+        Args: {
+          filter_niche?: string
+          filter_offer_type?: string
+          match_count: number
+          query_embedding: string
+          table_name: string
+        }
+        Returns: {
+          content: string
+          id: string
+          quality_notes: string
+          similarity: number
+          source: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
