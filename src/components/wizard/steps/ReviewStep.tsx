@@ -9,7 +9,7 @@ interface ReviewStepProps {
 }
 
 const ReviewStep = ({ businessContext, voiceData, onEditStep }: ReviewStepProps) => {
-  const { vsl_context } = businessContext;
+  const { business_context } = businessContext;
 
   const sections = [
     {
@@ -17,11 +17,11 @@ const ReviewStep = ({ businessContext, voiceData, onEditStep }: ReviewStepProps)
       title: 'Business Context',
       items: [
         { label: 'Video Title', value: businessContext.video_title },
-        { label: 'Offer Name', value: vsl_context.product_service.name },
-        { label: 'Type', value: vsl_context.product_service.type },
-        { label: 'Industry', value: vsl_context.industry_niche.primary_industry },
-        { label: 'Target Audience', value: vsl_context.target_audience.demographics.profession },
-        { label: 'Primary Pain', value: vsl_context.core_problem.primary_pain_point },
+        { label: 'Business', value: business_context.business.name },
+        { label: 'Offer', value: business_context.offer.name },
+        { label: 'Type', value: business_context.business.type },
+        { label: 'ICP Role', value: business_context.icp.demographics.profession_or_role },
+        { label: 'Primary Problem', value: business_context.icp_pain_points.primary_problem },
       ],
     },
     {
