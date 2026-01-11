@@ -14,69 +14,95 @@ interface BusinessContextStepProps {
 }
 
 const emptyTemplate = {
-  vsl_context: {
-    product_service: {
+  business_context: {
+    business: {
       name: "",
       description: "",
-      type: "coaching|course|software|service|product"
+      type: "coaching|agency|saas|ecommerce|info_product|service|personal_brand",
+      unique_mechanism: "",
+      key_differentiator: ""
     },
-    target_audience: {
+    offer: {
+      name: "",
+      description: "",
+      offer_type: "high_ticket|mid_ticket|low_ticket|community|free_lead_magnet",
+      price_point: "",
+      pricing_structure: "one_time|monthly|annual|payment_plan",
+      delivery_method: "done_for_you|done_with_you|course|coaching|software|community|physical_product",
+      what_they_get: [],
+      main_outcome: "",
+      timeline_to_result: "",
+      guarantee: "",
+      bonuses: []
+    },
+    creator: {
+      name: "",
+      positioning: "",
+      credibility_claim: "",
+      origin_story: ""
+    },
+    icp: {
       demographics: {
-        age_range: "",
+        profession_or_role: "",
         income_level: "",
-        profession: "",
-        business_size: "",
-        experience_level: "",
-        location: ""
+        business_stage: "pre_revenue|side_hustle|full_time|scaling|established",
+        experience_level: "beginner|intermediate|advanced"
       },
       psychographics: {
+        aspirations: [],
+        fears: [],
         values: [],
-        interests: [],
-        lifestyle: "",
-        personality_traits: []
+        beliefs_about_topic: []
+      },
+      current_situation: "",
+      what_theyve_tried: [],
+      why_previous_solutions_failed: "",
+      awareness_level: {
+        problem_aware: "yes|no|partially",
+        solution_aware: "yes|no|partially",
+        product_aware: "yes|no|partially"
       }
     },
-    core_problem: {
-      primary_pain_point: "",
-      keeps_them_up_at_night: "",
-      emotional_impact: "",
-      financial_impact: "",
-      time_impact: "",
-      relationship_impact: ""
+    icp_pain_points: {
+      primary_problem: "",
+      root_cause: "",
+      emotional_pain: {
+        frustrations: [],
+        fears: [],
+        embarrassments: [],
+        keeps_them_up_at_night: ""
+      },
+      practical_pain: {
+        time_impact: "",
+        financial_impact: "",
+        opportunities_missed: ""
+      },
+      social_pain: {
+        how_others_perceive_them: "",
+        comparison_to_peers: ""
+      },
+      false_beliefs: [],
+      common_objections: []
     },
-    transformation_promise: {
+    transformation: {
       from_state: {
-        current_situation: "",
-        pain_points: [],
-        limitations: []
+        situation: "",
+        struggles: [],
+        limiting_identity: ""
       },
       to_state: {
-        desired_outcome: "",
+        outcome: "",
         benefits: [],
-        new_capabilities: []
+        new_identity: ""
       },
       timeline: "",
-      success_metrics: []
+      proof_points: []
     },
-    pricing: {
-      price_point: "",
-      price_range: { low: 0, high: 0 },
-      payment_structure: "one-time|monthly|annual|payment_plan",
-      currency: "USD",
-      value_justification: ""
-    },
-    industry_niche: {
-      primary_industry: "",
+    industry: {
+      niche: "",
       sub_niche: "",
-      market_size: "",
       competition_level: "low|medium|high",
-      market_maturity: "emerging|growing|mature|declining"
-    },
-    script_specifications: {
-      target_length: {
-        minutes: 0,
-        range: "30-45|45-60|60-75|75-90"
-      }
+      common_competitors: []
     }
   }
 };
@@ -88,7 +114,7 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext }: Business
   const [isLoading, setIsLoading] = useState(false);
   const [wasAutoFilled, setWasAutoFilled] = useState(false);
   const [jsonValue, setJsonValue] = useState(() => 
-    JSON.stringify(businessContext.vsl_context, null, 2)
+    JSON.stringify(businessContext.business_context, null, 2)
   );
   const [jsonError, setJsonError] = useState<string | null>(null);
 
@@ -123,11 +149,11 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext }: Business
       // Update the business context with the filled data
       const newContext: BusinessContext = {
         video_title: businessContext.video_title,
-        vsl_context: data.vsl_context,
+        business_context: data.business_context,
       };
 
       onSetBusinessContext(newContext);
-      setJsonValue(JSON.stringify(data.vsl_context, null, 2));
+      setJsonValue(JSON.stringify(data.business_context, null, 2));
       setWasAutoFilled(true);
 
       toast({
@@ -154,7 +180,7 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext }: Business
       const parsed = JSON.parse(value);
       onSetBusinessContext({
         video_title: businessContext.video_title,
-        vsl_context: parsed,
+        business_context: parsed,
       });
     } catch (e) {
       setJsonError('Invalid JSON format');
@@ -233,12 +259,12 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext }: Business
           {isLoading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Filling...
+              Researching...
             </>
           ) : (
             <>
               <Sparkles className="w-4 h-4 mr-2" />
-              Have Grok fill this out for you
+              Have Grok research & fill this
             </>
           )}
         </Button>
@@ -271,7 +297,7 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext }: Business
           id="jsonEditor"
           value={jsonValue}
           onChange={(e) => handleJsonChange(e.target.value)}
-          className={`bg-secondary/50 border-border text-foreground font-mono text-xs min-h-[300px] ${
+          className={`bg-secondary/50 border-border text-foreground font-mono text-xs min-h-[400px] ${
             jsonError ? 'border-destructive' : ''
           }`}
           spellCheck={false}

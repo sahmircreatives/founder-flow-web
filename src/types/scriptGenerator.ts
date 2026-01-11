@@ -1,72 +1,95 @@
-// Business Context JSON Structure
+// Business Context JSON Structure (Stage 0 - Grok fills this)
 export interface BusinessContext {
   video_title: string;
-  vsl_context: {
-    product_service: {
+  business_context: {
+    business: {
       name: string;
       description: string;
-      type: 'coaching' | 'course' | 'software' | 'service' | 'product';
+      type: 'coaching' | 'agency' | 'saas' | 'ecommerce' | 'info_product' | 'service' | 'personal_brand';
+      unique_mechanism: string;
+      key_differentiator: string;
     };
-    target_audience: {
+    offer: {
+      name: string;
+      description: string;
+      offer_type: 'high_ticket' | 'mid_ticket' | 'low_ticket' | 'community' | 'free_lead_magnet';
+      price_point: string;
+      pricing_structure: 'one_time' | 'monthly' | 'annual' | 'payment_plan';
+      delivery_method: 'done_for_you' | 'done_with_you' | 'course' | 'coaching' | 'software' | 'community' | 'physical_product';
+      what_they_get: string[];
+      main_outcome: string;
+      timeline_to_result: string;
+      guarantee: string;
+      bonuses: string[];
+    };
+    creator: {
+      name: string;
+      positioning: string;
+      credibility_claim: string;
+      origin_story: string;
+    };
+    icp: {
       demographics: {
-        age_range: string;
+        profession_or_role: string;
         income_level: string;
-        profession: string;
-        business_size: string;
-        experience_level: string;
-        location: string;
+        business_stage: 'pre_revenue' | 'side_hustle' | 'full_time' | 'scaling' | 'established';
+        experience_level: 'beginner' | 'intermediate' | 'advanced';
       };
       psychographics: {
+        aspirations: string[];
+        fears: string[];
         values: string[];
-        interests: string[];
-        lifestyle: string;
-        personality_traits: string[];
+        beliefs_about_topic: string[];
+      };
+      current_situation: string;
+      what_theyve_tried: string[];
+      why_previous_solutions_failed: string;
+      awareness_level: {
+        problem_aware: 'yes' | 'no' | 'partially';
+        solution_aware: 'yes' | 'no' | 'partially';
+        product_aware: 'yes' | 'no' | 'partially';
       };
     };
-    core_problem: {
-      primary_pain_point: string;
-      keeps_them_up_at_night: string;
-      emotional_impact: string;
-      financial_impact: string;
-      time_impact: string;
-      relationship_impact: string;
+    icp_pain_points: {
+      primary_problem: string;
+      root_cause: string;
+      emotional_pain: {
+        frustrations: string[];
+        fears: string[];
+        embarrassments: string[];
+        keeps_them_up_at_night: string;
+      };
+      practical_pain: {
+        time_impact: string;
+        financial_impact: string;
+        opportunities_missed: string;
+      };
+      social_pain: {
+        how_others_perceive_them: string;
+        comparison_to_peers: string;
+      };
+      false_beliefs: string[];
+      common_objections: string[];
     };
-    transformation_promise: {
+    transformation: {
       from_state: {
-        current_situation: string;
-        pain_points: string[];
-        limitations: string[];
+        situation: string;
+        struggles: string[];
+        limiting_identity: string;
       };
       to_state: {
-        desired_outcome: string;
+        outcome: string;
         benefits: string[];
-        new_capabilities: string[];
+        new_identity: string;
       };
       timeline: string;
-      success_metrics: string[];
+      proof_points: string[];
     };
-    pricing: {
-      price_point: string;
-      price_range: {
-        low: number;
-        high: number;
-      };
-      payment_structure: 'one-time' | 'monthly' | 'annual' | 'payment_plan';
-      currency: string;
-      value_justification: string;
-    };
-    industry_niche: {
-      primary_industry: string;
+    industry: {
+      niche: string;
       sub_niche: string;
-      market_size: string;
       competition_level: 'low' | 'medium' | 'high';
-      market_maturity: 'emerging' | 'growing' | 'mature' | 'declining';
-    };
-    script_specifications: {
-      target_length: {
-        minutes: number;
-        range: '15-60s' | '5-6m' | '8-15m' | '20-30m';
-      };
+      common_competitors: string[];
     };
   };
 }

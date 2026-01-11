@@ -30,18 +30,46 @@ serve(async (req) => {
     const cleanUsername = username.replace(/^@/, '');
     console.log(`[grok-fill-business] Starting research for @${cleanUsername}`);
 
-    const systemPrompt = `You are a research assistant filling structured business context for a YouTube script generator.
-Return ONLY valid JSON. No markdown. No extra text. No code fences.
-Preserve the exact JSON keys and nesting from the template.
-Do NOT guess: unknown -> "UNKNOWN". Weak inference -> "INFERRED: ..." (short).
-Do not use tweets as evidence; tweets are handled separately.
-If a field should be an array, return an array. If a field should be a number, return a number.
-For enum fields like "type", "payment_structure", "competition_level", "market_maturity", "range" - use only the valid options shown in the template (before the | character).`;
+    const systemPrompt = `You are a business research specialist filling structured context for a YouTube VSL script generator.
 
-    const userPrompt = `Target: @${cleanUsername}
-Optional website/link-in-bio: ${websiteUrl || 'UNKNOWN'}
-Task: Fill the JSON template using public info about this person/business. Preserve exact keys/structure. Return JSON only.
-Template: ${JSON.stringify(template, null, 2)}`;
+YOUR TASK:
+Research the X/Twitter profile and optional website to extract comprehensive business intelligence. Fill every field with specific, actionable data.
+
+CRITICAL RULES:
+1. Return ONLY valid JSON - no markdown, no code fences, no explanatory text
+2. Preserve the exact JSON structure from the template
+3. For UNKNOWN data: use "UNKNOWN" (not empty strings)
+4. For INFERRED data: prefix with "INFERRED: " followed by your best estimate
+5. Arrays must contain at least 2-3 items when data is available
+6. Be SPECIFIC - avoid generic filler like "improve results" or "grow business"
+
+ENUM FIELDS - Use ONLY these values:
+- business.type: coaching | agency | saas | ecommerce | info_product | service | personal_brand
+- offer.offer_type: high_ticket | mid_ticket | low_ticket | community | free_lead_magnet
+- offer.pricing_structure: one_time | monthly | annual | payment_plan
+- offer.delivery_method: done_for_you | done_with_you | course | coaching | software | community | physical_product
+- icp.demographics.business_stage: pre_revenue | side_hustle | full_time | scaling | established
+- icp.demographics.experience_level: beginner | intermediate | advanced
+- icp.awareness_level.*: yes | no | partially
+- industry.competition_level: low | medium | high
+
+PRIORITY RESEARCH AREAS:
+1. business.unique_mechanism - What makes their approach different? Look for frameworks, methods, systems
+2. offer.main_outcome - The specific transformation/result promised
+3. creator.credibility_claim - Their proof of expertise (results, experience, credentials)
+4. icp_pain_points.primary_problem - The core struggle their audience faces
+5. transformation.proof_points - Specific results, case studies, testimonials mentioned
+
+DO NOT use tweets as factual evidence - focus on bio, pinned content, website, and stated claims.`;
+
+    const userPrompt = `RESEARCH TARGET: @${cleanUsername}
+WEBSITE: ${websiteUrl || 'Not provided - research profile only'}
+
+Fill every field in this template with researched data about this creator/business:
+
+${JSON.stringify(template, null, 2)}
+
+Return the completed JSON only.`;
 
     console.log(`[grok-fill-business] Calling xAI API...`);
 
@@ -57,8 +85,8 @@ Template: ${JSON.stringify(template, null, 2)}`;
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        max_tokens: 2000,
-        temperature: 0.2,
+        max_tokens: 4000,
+        temperature: 0.3,
       }),
     });
 
@@ -96,10 +124,10 @@ Template: ${JSON.stringify(template, null, 2)}`;
         body: JSON.stringify({
           model: 'grok-4-0709',
           messages: [
-            { role: 'system', content: 'Fix this into valid JSON matching the template exactly. Return JSON only. No markdown. No code fences.' },
-            { role: 'user', content: `Template: ${JSON.stringify(template)}\n\nBroken JSON to fix:\n${content}` }
+            { role: 'system', content: 'Fix this into valid JSON matching the template exactly. Return JSON only. No markdown. No code fences. Preserve all data.' },
+            { role: 'user', content: `Template structure:\n${JSON.stringify(template)}\n\nJSON to fix:\n${content}` }
           ],
-          max_tokens: 2000,
+          max_tokens: 4000,
           temperature: 0.1,
         }),
       });
@@ -120,10 +148,10 @@ Template: ${JSON.stringify(template, null, 2)}`;
       console.log('[grok-fill-business] JSON repaired successfully');
     }
 
-    // Validate structure matches template (basic check - has vsl_context)
-    if (!parsed.vsl_context) {
-      console.error('[grok-fill-business] Invalid structure: missing vsl_context');
-      throw new Error('Invalid response structure: missing vsl_context');
+    // Validate structure - check for business_context key
+    if (!parsed.business_context) {
+      console.error('[grok-fill-business] Invalid structure: missing business_context');
+      throw new Error('Invalid response structure: missing business_context');
     }
 
     console.log(`[grok-fill-business] Successfully filled business context for @${cleanUsername}`);

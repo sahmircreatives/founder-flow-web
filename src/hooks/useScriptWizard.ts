@@ -4,75 +4,98 @@ import { BusinessContext, VoiceData } from '@/types/scriptGenerator';
 const STORAGE_KEY_BUSINESS = 'script_wizard_business_context';
 const STORAGE_KEY_VOICE = 'script_wizard_voice_data';
 
-// Initial empty state for business context
+// Initial empty state for business context (new structure)
 const initialBusinessContext: BusinessContext = {
   video_title: '',
-  vsl_context: {
-    product_service: {
+  business_context: {
+    business: {
       name: '',
       description: '',
-      type: 'service',
+      type: 'coaching',
+      unique_mechanism: '',
+      key_differentiator: '',
     },
-    target_audience: {
+    offer: {
+      name: '',
+      description: '',
+      offer_type: 'high_ticket',
+      price_point: '',
+      pricing_structure: 'one_time',
+      delivery_method: 'coaching',
+      what_they_get: [],
+      main_outcome: '',
+      timeline_to_result: '',
+      guarantee: '',
+      bonuses: [],
+    },
+    creator: {
+      name: '',
+      positioning: '',
+      credibility_claim: '',
+      origin_story: '',
+    },
+    icp: {
       demographics: {
-        age_range: '',
+        profession_or_role: '',
         income_level: '',
-        profession: '',
-        business_size: '',
-        experience_level: '',
-        location: '',
+        business_stage: 'full_time',
+        experience_level: 'intermediate',
       },
       psychographics: {
+        aspirations: [],
+        fears: [],
         values: [],
-        interests: [],
-        lifestyle: '',
-        personality_traits: [],
+        beliefs_about_topic: [],
+      },
+      current_situation: '',
+      what_theyve_tried: [],
+      why_previous_solutions_failed: '',
+      awareness_level: {
+        problem_aware: 'yes',
+        solution_aware: 'partially',
+        product_aware: 'no',
       },
     },
-    core_problem: {
-      primary_pain_point: '',
-      keeps_them_up_at_night: '',
-      emotional_impact: '',
-      financial_impact: '',
-      time_impact: '',
-      relationship_impact: '',
+    icp_pain_points: {
+      primary_problem: '',
+      root_cause: '',
+      emotional_pain: {
+        frustrations: [],
+        fears: [],
+        embarrassments: [],
+        keeps_them_up_at_night: '',
+      },
+      practical_pain: {
+        time_impact: '',
+        financial_impact: '',
+        opportunities_missed: '',
+      },
+      social_pain: {
+        how_others_perceive_them: '',
+        comparison_to_peers: '',
+      },
+      false_beliefs: [],
+      common_objections: [],
     },
-    transformation_promise: {
+    transformation: {
       from_state: {
-        current_situation: '',
-        pain_points: [],
-        limitations: [],
+        situation: '',
+        struggles: [],
+        limiting_identity: '',
       },
       to_state: {
-        desired_outcome: '',
+        outcome: '',
         benefits: [],
-        new_capabilities: [],
+        new_identity: '',
       },
       timeline: '',
-      success_metrics: [],
+      proof_points: [],
     },
-    pricing: {
-      price_point: '',
-      price_range: {
-        low: 0,
-        high: 0,
-      },
-      payment_structure: 'one-time',
-      currency: 'USD',
-      value_justification: '',
-    },
-    industry_niche: {
-      primary_industry: '',
+    industry: {
+      niche: '',
       sub_niche: '',
-      market_size: '',
       competition_level: 'medium',
-      market_maturity: 'growing',
-    },
-    script_specifications: {
-      target_length: {
-        minutes: 5,
-        range: '5-6m',
-      },
+      common_competitors: [],
     },
   },
 };
