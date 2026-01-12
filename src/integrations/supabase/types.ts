@@ -60,6 +60,7 @@ export type Database = {
           cta_type: string | null
           embedding: string | null
           id: string
+          niche: string | null
           offer_type: string | null
           quality_notes: string | null
           source: string | null
@@ -70,6 +71,7 @@ export type Database = {
           cta_type?: string | null
           embedding?: string | null
           id?: string
+          niche?: string | null
           offer_type?: string | null
           quality_notes?: string | null
           source?: string | null
@@ -80,6 +82,7 @@ export type Database = {
           cta_type?: string | null
           embedding?: string | null
           id?: string
+          niche?: string | null
           offer_type?: string | null
           quality_notes?: string | null
           source?: string | null
@@ -131,6 +134,7 @@ export type Database = {
           created_at: string | null
           embedding: string | null
           id: string
+          niche: string | null
           objection_type: string | null
           offer_type: string | null
           quality_notes: string | null
@@ -141,6 +145,7 @@ export type Database = {
           created_at?: string | null
           embedding?: string | null
           id?: string
+          niche?: string | null
           objection_type?: string | null
           offer_type?: string | null
           quality_notes?: string | null
@@ -151,6 +156,7 @@ export type Database = {
           created_at?: string | null
           embedding?: string | null
           id?: string
+          niche?: string | null
           objection_type?: string | null
           offer_type?: string | null
           quality_notes?: string | null

@@ -22,6 +22,16 @@ const SECTION_TYPES = [
   { value: "objection_handler", label: "Objection Handler", table: "rag_objection_handlers" },
 ];
 
+const NICHE_OPTIONS = [
+  { value: "agency_owners", label: "Agency owners" },
+  { value: "business_coaches", label: "Business coaches" },
+  { value: "fitness_health_coaches", label: "Fitness/health coaches" },
+  { value: "course_creators", label: "Course creators" },
+  { value: "saas_founders", label: "SaaS founders" },
+  { value: "consultants", label: "Consultants" },
+  { value: "ecommerce", label: "Ecommerce" },
+];
+
 export default function ManualAddForm({ onSuccess }: ManualAddFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -53,8 +63,8 @@ export default function ManualAddForm({ onSuccess }: ManualAddFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.type || !formData.content) {
-      toast.error("Please select a type and enter content");
+    if (!formData.type || !formData.content || !formData.niche) {
+      toast.error("Please select a type, niche, and enter content");
       return;
     }
 
@@ -92,6 +102,7 @@ export default function ManualAddForm({ onSuccess }: ManualAddFormProps) {
         });
       } else if (sectionType.value === "cta") {
         Object.assign(baseRecord, {
+          niche: formData.niche || null,
           offer_type: formData.offer_type || null,
           cta_type: formData.cta_type || null,
         });
@@ -102,6 +113,7 @@ export default function ManualAddForm({ onSuccess }: ManualAddFormProps) {
         });
       } else if (sectionType.value === "objection_handler") {
         Object.assign(baseRecord, {
+          niche: formData.niche || null,
           objection_type: formData.objection_type || null,
           offer_type: formData.offer_type || null,
         });
@@ -140,6 +152,7 @@ export default function ManualAddForm({ onSuccess }: ManualAddFormProps) {
           source: formData.source || null,
           quality_notes: formData.quality_notes || null,
           embedding: embedding as unknown as string,
+          niche: formData.niche || null,
           offer_type: formData.offer_type || null,
           cta_type: formData.cta_type || null,
         });
@@ -160,6 +173,7 @@ export default function ManualAddForm({ onSuccess }: ManualAddFormProps) {
           source: formData.source || null,
           quality_notes: formData.quality_notes || null,
           embedding: embedding as unknown as string,
+          niche: formData.niche || null,
           objection_type: formData.objection_type || null,
           offer_type: formData.offer_type || null,
         });
@@ -205,7 +219,7 @@ export default function ManualAddForm({ onSuccess }: ManualAddFormProps) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <Label>Section Type *</Label>
               <Select
@@ -219,6 +233,25 @@ export default function ManualAddForm({ onSuccess }: ManualAddFormProps) {
                   {SECTION_TYPES.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
                       {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Niche *</Label>
+              <Select
+                value={formData.niche}
+                onValueChange={(value) => setFormData({ ...formData, niche: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select niche..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {NICHE_OPTIONS.map((niche) => (
+                    <SelectItem key={niche.value} value={niche.value}>
+                      {niche.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -250,15 +283,7 @@ export default function ManualAddForm({ onSuccess }: ManualAddFormProps) {
 
           {(selectedType?.value === "hook" || selectedType?.value === "body") && (
             <>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="space-y-2">
-                  <Label>Niche</Label>
-                  <Input
-                    placeholder="e.g., business coaching"
-                    value={formData.niche}
-                    onChange={(e) => setFormData({ ...formData, niche: e.target.value })}
-                  />
-                </div>
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Sub-Niche</Label>
                   <Input
@@ -326,23 +351,13 @@ export default function ManualAddForm({ onSuccess }: ManualAddFormProps) {
           )}
 
           {selectedType?.value === "proof" && (
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Niche</Label>
-                <Input
-                  placeholder="e.g., business coaching"
-                  value={formData.niche}
-                  onChange={(e) => setFormData({ ...formData, niche: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Proof Type</Label>
-                <Input
-                  placeholder="e.g., case_study, testimonial"
-                  value={formData.proof_type}
-                  onChange={(e) => setFormData({ ...formData, proof_type: e.target.value })}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label>Proof Type</Label>
+              <Input
+                placeholder="e.g., case_study, testimonial"
+                value={formData.proof_type}
+                onChange={(e) => setFormData({ ...formData, proof_type: e.target.value })}
+              />
             </div>
           )}
 
