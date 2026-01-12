@@ -115,12 +115,13 @@ serve(async (req) => {
     console.log("Embeddings generated, searching collections...");
 
     // Search each collection in parallel
+    // IMPORTANT: Niche filtering happens BEFORE vector similarity in the database function
     const [hooks, bodySections, ctaSections, proofSections, objectionHandlers] = await Promise.all([
       searchCollection(supabase, "rag_hooks", hookEmbedding, 2, niche, offer_type),
       searchCollection(supabase, "rag_body_sections", bodyEmbedding, 2, niche, null),
-      searchCollection(supabase, "rag_cta_sections", ctaEmbedding, 1, null, offer_type),
+      searchCollection(supabase, "rag_cta_sections", ctaEmbedding, 1, niche, offer_type),
       searchCollection(supabase, "rag_proof_sections", proofEmbedding, 1, niche, null),
-      searchCollection(supabase, "rag_objection_handlers", objectionEmbedding, 1, null, offer_type),
+      searchCollection(supabase, "rag_objection_handlers", objectionEmbedding, 1, niche, offer_type),
     ]);
 
     const results: RAGResults = {
