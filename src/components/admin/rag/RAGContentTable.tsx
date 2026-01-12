@@ -36,8 +36,20 @@ const TABLES = [
   { value: "rag_objection_handlers", label: "Objection Handlers" },
 ];
 
+const NICHE_OPTIONS = [
+  { value: "", label: "All Niches" },
+  { value: "agency_owners", label: "Agency owners" },
+  { value: "business_coaches", label: "Business coaches" },
+  { value: "fitness_health_coaches", label: "Fitness/health coaches" },
+  { value: "course_creators", label: "Course creators" },
+  { value: "saas_founders", label: "SaaS founders" },
+  { value: "consultants", label: "Consultants" },
+  { value: "ecommerce", label: "Ecommerce" },
+];
+
 export default function RAGContentTable() {
   const [selectedTable, setSelectedTable] = useState("rag_hooks");
+  const [selectedNiche, setSelectedNiche] = useState("");
   const [items, setItems] = useState<RAGItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [editItem, setEditItem] = useState<RAGItem | null>(null);
@@ -46,11 +58,17 @@ export default function RAGContentTable() {
   const fetchItems = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from(selectedTable as "rag_hooks" | "rag_body_sections" | "rag_cta_sections" | "rag_proof_sections" | "rag_objection_handlers")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(100);
+
+      if (selectedNiche) {
+        query = query.eq("niche", selectedNiche);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setItems(data || []);
@@ -64,7 +82,7 @@ export default function RAGContentTable() {
 
   useEffect(() => {
     fetchItems();
-  }, [selectedTable]);
+  }, [selectedTable, selectedNiche]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -109,6 +127,20 @@ export default function RAGContentTable() {
           sub_niche: editItem.sub_niche,
           offer_type: editItem.offer_type,
         });
+      } else if (selectedTable === "rag_cta_sections") {
+        Object.assign(updateData, {
+          niche: editItem.niche,
+          offer_type: editItem.offer_type,
+        });
+      } else if (selectedTable === "rag_proof_sections") {
+        Object.assign(updateData, {
+          niche: editItem.niche,
+        });
+      } else if (selectedTable === "rag_objection_handlers") {
+        Object.assign(updateData, {
+          niche: editItem.niche,
+          offer_type: editItem.offer_type,
+        });
       }
 
       const { error } = await supabase
@@ -131,23 +163,37 @@ export default function RAGContentTable() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <CardTitle>Manage Content</CardTitle>
             <CardDescription>View, edit, or delete RAG content</CardDescription>
           </div>
-          <Select value={selectedTable} onValueChange={setSelectedTable}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TABLES.map((table) => (
-                <SelectItem key={table.value} value={table.value}>
-                  {table.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            <Select value={selectedNiche} onValueChange={setSelectedNiche}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by niche" />
+              </SelectTrigger>
+              <SelectContent>
+                {NICHE_OPTIONS.map((niche) => (
+                  <SelectItem key={niche.value} value={niche.value}>
+                    {niche.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedTable} onValueChange={setSelectedTable}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TABLES.map((table) => (
+                  <SelectItem key={table.value} value={table.value}>
+                    {table.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -164,6 +210,7 @@ export default function RAGContentTable() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[40%]">Content Preview</TableHead>
+                <TableHead>Niche</TableHead>
                 <TableHead>Source</TableHead>
                 <TableHead>Metadata</TableHead>
                 <TableHead>Created</TableHead>
@@ -177,13 +224,19 @@ export default function RAGContentTable() {
                     <p className="line-clamp-2 text-sm">{item.content}</p>
                   </TableCell>
                   <TableCell>
+                    {item.niche ? (
+                      <Badge variant="default">{NICHE_OPTIONS.find(n => n.value === item.niche)?.label || item.niche}</Badge>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     <span className="text-sm text-muted-foreground">
                       {item.source || "—"}
                     </span>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {item.niche && <Badge variant="outline">{item.niche}</Badge>}
                       {item.offer_type && <Badge variant="secondary">{item.offer_type}</Badge>}
                     </div>
                   </TableCell>

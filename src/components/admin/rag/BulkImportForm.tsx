@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Sparkles, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -42,6 +43,16 @@ const TYPE_LABELS: Record<string, string> = {
   objection_handler: "Objection",
 };
 
+const NICHE_OPTIONS = [
+  { value: "agency_owners", label: "Agency owners" },
+  { value: "business_coaches", label: "Business coaches" },
+  { value: "fitness_health_coaches", label: "Fitness/health coaches" },
+  { value: "course_creators", label: "Course creators" },
+  { value: "saas_founders", label: "SaaS founders" },
+  { value: "consultants", label: "Consultants" },
+  { value: "ecommerce", label: "Ecommerce" },
+];
+
 export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
   const [isChunking, setIsChunking] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -55,6 +66,11 @@ export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
   const handleChunk = async () => {
     if (!transcript.trim()) {
       toast.error("Please enter a transcript");
+      return;
+    }
+    
+    if (!niche) {
+      toast.error("Please select a niche");
       return;
     }
 
@@ -149,6 +165,7 @@ export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
             source: chunk.source || null,
             quality_notes: chunk.quality_notes || null,
             embedding,
+            niche: chunk.niche || null,
             offer_type: chunk.offer_type || null,
           });
           insertError = error;
@@ -167,6 +184,7 @@ export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
             source: chunk.source || null,
             quality_notes: chunk.quality_notes || null,
             embedding,
+            niche: chunk.niche || null,
             offer_type: chunk.offer_type || null,
           });
           insertError = error;
@@ -222,7 +240,7 @@ export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <div className="space-y-2">
               <Label>Source Name</Label>
               <Input
@@ -232,12 +250,19 @@ export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label>Niche</Label>
-              <Input
-                placeholder="e.g., business coaching"
-                value={niche}
-                onChange={(e) => setNiche(e.target.value)}
-              />
+              <Label>Niche *</Label>
+              <Select value={niche} onValueChange={setNiche}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select niche..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {NICHE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>Sub-Niche</Label>
@@ -259,7 +284,7 @@ export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
 
           <Button
             onClick={handleChunk}
-            disabled={isChunking || !transcript.trim()}
+            disabled={isChunking || !transcript.trim() || !niche}
             className="w-full"
           >
             {isChunking ? (
