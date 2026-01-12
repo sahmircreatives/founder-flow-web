@@ -37,7 +37,7 @@ const TABLES = [
 ];
 
 const NICHE_OPTIONS = [
-  { value: "", label: "All Niches" },
+  { value: "all", label: "All Niches" },
   { value: "agency_owners", label: "Agency owners" },
   { value: "business_coaches", label: "Business coaches" },
   { value: "fitness_health_coaches", label: "Fitness/health coaches" },
@@ -49,7 +49,7 @@ const NICHE_OPTIONS = [
 
 export default function RAGContentTable() {
   const [selectedTable, setSelectedTable] = useState("rag_hooks");
-  const [selectedNiche, setSelectedNiche] = useState("");
+  const [selectedNiche, setSelectedNiche] = useState("all");
   const [items, setItems] = useState<RAGItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [editItem, setEditItem] = useState<RAGItem | null>(null);
@@ -64,7 +64,7 @@ export default function RAGContentTable() {
         .order("created_at", { ascending: false })
         .limit(100);
 
-      if (selectedNiche) {
+      if (selectedNiche && selectedNiche !== "all") {
         query = query.eq("niche", selectedNiche);
       }
 
