@@ -9,28 +9,28 @@ interface ReviewStepProps {
 }
 
 const ReviewStep = ({ businessContext, voiceData, onEditStep }: ReviewStepProps) => {
-  const { business_context } = businessContext;
+  const business_context = businessContext?.business_context;
 
   const sections = [
     {
       step: 1,
       title: 'Business Context',
       items: [
-        { label: 'Video Title', value: businessContext.video_title },
-        { label: 'Business', value: business_context.business.name },
-        { label: 'Offer', value: business_context.offer.name },
-        { label: 'Type', value: business_context.business.type },
-        { label: 'ICP Role', value: business_context.icp.demographics.profession_or_role },
-        { label: 'Primary Problem', value: business_context.icp_pain_points.primary_problem },
+        { label: 'Video Title', value: businessContext?.video_title || '' },
+        { label: 'Business', value: business_context?.business?.name || '' },
+        { label: 'Offer', value: business_context?.offer?.name || '' },
+        { label: 'Type', value: business_context?.business?.type || '' },
+        { label: 'ICP Role', value: business_context?.icp?.demographics?.profession_or_role || '' },
+        { label: 'Primary Problem', value: business_context?.icp_pain_points?.primary_problem || '' },
       ],
     },
     {
       step: 2,
       title: 'Voice & Tone',
       items: [
-        { label: 'Tone Goals', value: voiceData.tone_goals.join(', ') || 'Not set' },
-        { label: 'Do Phrases', value: voiceData.do_phrases.length + ' phrases' },
-        { label: 'Content Examples', value: voiceData.tweet_examples ? 'Provided' : 'Not provided' },
+        { label: 'Tone Goals', value: voiceData?.tone_goals?.join(', ') || 'Not set' },
+        { label: 'Do Phrases', value: (voiceData?.do_phrases?.length || 0) + ' phrases' },
+        { label: 'Content Examples', value: voiceData?.tweet_examples ? 'Provided' : 'Not provided' },
       ],
     },
   ];
