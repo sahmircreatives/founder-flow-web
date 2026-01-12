@@ -554,7 +554,9 @@ async function runScriptStage(
   tweets: string,
   constraints: any,
   researchPack: ResearchPack,
-  alignedClaims: SupportedClaim[]
+  alignedClaims: SupportedClaim[],
+  ragExamplesSection: string = "",
+  ragResults: RAGResults | null = null
 ): Promise<{ script: string; validation: ValidationResult; contextUseLog: ContextUseLog }> {
   const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
   
@@ -565,10 +567,17 @@ async function runScriptStage(
   const vsl = contextProfile?.vsl_context || {};
   const targetMinutes = vsl.script_specifications?.target_length?.minutes || 10;
 
+  // Build RAG section if examples are available
+  const ragSection = ragExamplesSection ? `
+=== REFERENCE EXAMPLES (Pattern from these - do not copy verbatim) ===
+${ragExamplesSection}
+` : "";
+
   const scriptPrompt = `You are an expert YouTube scriptwriter creating a research-backed, high-converting script.
 
 === TOPIC ===
 ${topic || contextProfile?.video_title || "YouTube Video Script"}
+${ragSection}
 
 === RESEARCH-BACKED CLAIMS (USE THESE FOR FACTS) ===
 ${alignedClaims.map((c, i) => `[${i + 1}] ${c.claim}
@@ -633,6 +642,10 @@ ${toneSummary.example_lines.map(l => `"${l}"`).join('\n')}
 
 6. NO GENERIC ADVICE: Every point must be specific to THIS audience and THIS offer.
 
+7. REFERENCE EXAMPLES ARE FOR STRUCTURE ONLY: If reference examples are provided, pattern from their structure, pacing, and flow - do NOT copy verbatim.
+
+8. MATCH PACING AND FLOW OF EXAMPLES: Use the reference examples to understand effective patterns, not to replicate words.
+
 === SCRIPT STRUCTURE ===
 Write a ${targetMinutes}-minute script with:
 
@@ -659,7 +672,14 @@ Return a JSON object with:
       { "name": "Steps", "non_tweet_value_points": <number> },
       { "name": "Mistakes", "non_tweet_value_points": <number> },
       { "name": "CTA", "non_tweet_value_points": <number> }
-    ]
+    ],
+    "rag_examples_used": {
+      "hooks": ["source names used"],
+      "body": ["source names used"],
+      "cta": ["source names used"],
+      "proof": ["source names used"],
+      "objection": ["source names used"]
+    }
   }
 }
 
@@ -704,7 +724,14 @@ Return ONLY valid JSON.`;
       { name: "Steps", non_tweet_value_points: 2 },
       { name: "Mistakes", non_tweet_value_points: 2 },
       { name: "CTA", non_tweet_value_points: 2 }
-    ]
+    ],
+    rag_examples_used: ragResults ? {
+      hooks: ragResults.hooks?.map(h => h.source || 'Unknown') || [],
+      body: ragResults.body_sections?.map(b => b.source || 'Unknown') || [],
+      cta: ragResults.cta_sections?.map(c => c.source || 'Unknown') || [],
+      proof: ragResults.proof_sections?.map(p => p.source || 'Unknown') || [],
+      objection: ragResults.objection_handlers?.map(o => o.source || 'Unknown') || []
+    } : undefined
   };
 
   try {
