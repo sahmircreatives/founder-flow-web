@@ -41,6 +41,12 @@ interface ToneSummary {
   example_lines: string[];
 }
 
+interface RetentionElements {
+  open_loops: { location: string; loop: string; closed_at: string }[];
+  re_hooks: { after_section: string; re_hook_text: string }[];
+  pattern_interrupts: { location: string; type: string }[];
+}
+
 interface ContextUseLog {
   tweet_proof_items_used: number;
   tweet_proof_items: string[];
@@ -75,39 +81,44 @@ interface RAGResults {
   objection_handlers: RAGExample[];
 }
 
-// Build RAG examples section for the prompt
+// Build RAG examples section for the prompt - updated format
 function buildExamplesSection(retrieved: RAGResults): string {
   let section = '';
   
+  // Hook examples (show up to 2)
   if (retrieved.hooks?.length > 0) {
     section += `HOOK EXAMPLES:\n`;
-    retrieved.hooks.forEach((hook, i) => {
+    retrieved.hooks.slice(0, 2).forEach((hook, i) => {
       section += `---\nExample ${i + 1} (similarity: ${hook.similarity?.toFixed(2) || 'N/A'}):\n"${hook.content}"\nSource: ${hook.source || 'Unknown'}\n---\n`;
     });
     section += `↳ Pattern from: Opening structure, curiosity loop setup, pacing\n\n`;
   }
   
+  // Body/Value examples (show up to 2)
   if (retrieved.body_sections?.length > 0) {
-    section += `BODY EXAMPLES:\n`;
-    retrieved.body_sections.forEach((body, i) => {
+    section += `BODY/VALUE EXAMPLES:\n`;
+    retrieved.body_sections.slice(0, 2).forEach((body, i) => {
       section += `---\nExample ${i + 1} (similarity: ${body.similarity?.toFixed(2) || 'N/A'}):\n"${body.content}"\nSource: ${body.source || 'Unknown'}\n---\n`;
     });
     section += `↳ Pattern from: How points are explained, transitions, depth of value\n\n`;
   }
   
+  // CTA example (show 1)
   if (retrieved.cta_sections?.length > 0) {
-    section += `CTA EXAMPLE:\n"${retrieved.cta_sections[0].content}"\nSource: ${retrieved.cta_sections[0].source || 'Unknown'}\n`;
-    section += `↳ Pattern from: Transition into offer, tone, urgency level\n\n`;
+    section += `CTA EXAMPLE:\n---\n"${retrieved.cta_sections[0].content}"\nSource: ${retrieved.cta_sections[0].source || 'Unknown'}\n---\n`;
+    section += `↳ Pattern from: Transition into offer, tone, how it feels native\n\n`;
   }
   
+  // Proof example (show 1)
   if (retrieved.proof_sections?.length > 0) {
-    section += `PROOF EXAMPLE:\n"${retrieved.proof_sections[0].content}"\nSource: ${retrieved.proof_sections[0].source || 'Unknown'}\n`;
-    section += `↳ Pattern from: How results are presented, specificity\n\n`;
+    section += `PROOF EXAMPLE:\n---\n"${retrieved.proof_sections[0].content}"\nSource: ${retrieved.proof_sections[0].source || 'Unknown'}\n---\n`;
+    section += `↳ Pattern from: How results are presented, specificity, weaving into value\n\n`;
   }
   
+  // Objection handler example (show 1)
   if (retrieved.objection_handlers?.length > 0) {
-    section += `OBJECTION HANDLER EXAMPLE:\n"${retrieved.objection_handlers[0].content}"\nSource: ${retrieved.objection_handlers[0].source || 'Unknown'}\n`;
-    section += `↳ Pattern from: How objection is acknowledged and reframed\n\n`;
+    section += `OBJECTION HANDLER EXAMPLE:\n---\n"${retrieved.objection_handlers[0].content}"\nSource: ${retrieved.objection_handlers[0].source || 'Unknown'}\n---\n`;
+    section += `↳ Pattern from: How objection is acknowledged and reframed naturally\n\n`;
   }
   
   return section;
@@ -546,7 +557,7 @@ function validateScript(
   };
 }
 
-// Stage 4: Script Generation with tone summary and validation
+// Stage 4: Script Generation with comprehensive YouTube retention prompt
 async function runScriptStage(
   topic: string,
   contextProfile: any,
@@ -557,135 +568,429 @@ async function runScriptStage(
   alignedClaims: SupportedClaim[],
   ragExamplesSection: string = "",
   ragResults: RAGResults | null = null
-): Promise<{ script: string; validation: ValidationResult; contextUseLog: ContextUseLog }> {
+): Promise<{ script: string; validation: ValidationResult; contextUseLog: ContextUseLog; retentionElements?: RetentionElements }> {
   const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
   
   if (!ANTHROPIC_API_KEY) {
     throw new Error("ANTHROPIC_API_KEY is not configured");
   }
 
-  const vsl = contextProfile?.vsl_context || {};
-  const targetMinutes = vsl.script_specifications?.target_length?.minutes || 10;
+  // Extract business context
+  const bc = contextProfile?.business_context || {};
+  const business = bc.business || {};
+  const offer = bc.offer || {};
+  const creator = bc.creator || {};
+  const icp = bc.icp || {};
+  const icpPainPoints = bc.icp_pain_points || {};
+  const transformation = bc.transformation || {};
+  const industry = bc.industry || {};
+  
+  // Get target length (default 10 minutes)
+  const targetLength = bc.target_length || contextProfile?.target_length || 10;
+  const videoTitle = topic || contextProfile?.video_title || "YouTube Video Script";
 
-  // Build RAG section if examples are available
+  // Build RAG examples section
   const ragSection = ragExamplesSection ? `
-=== REFERENCE EXAMPLES (Pattern from these - do not copy verbatim) ===
-${ragExamplesSection}
-` : "";
+=============================================================
+REFERENCE EXAMPLES (Pattern from these - do not copy verbatim)
+=============================================================
 
-  const scriptPrompt = `You are an expert YouTube scriptwriter creating a research-backed, high-converting script.
+${ragExamplesSection}` : "";
 
-=== TOPIC ===
-${topic || contextProfile?.video_title || "YouTube Video Script"}
-${ragSection}
+  // Build aligned claims section
+  const claimsSection = alignedClaims.length > 0 
+    ? alignedClaims.map((c, i) => `[${i + 1}] ${c.claim}\n   Source: ${c.source_url}`).join('\n\n')
+    : "No research claims available - use only original insights and examples.";
 
-=== RESEARCH-BACKED CLAIMS (USE THESE FOR FACTS) ===
-${alignedClaims.map((c, i) => `[${i + 1}] ${c.claim}
-   Source: ${c.source_url}`).join('\n\n')}
-
-=== CONTEXT PROFILE (USE FOR TARGETING) ===
-Product/Service: ${vsl.product_service?.name || 'Not specified'} (${vsl.product_service?.type || 'service'})
-Description: ${vsl.product_service?.description || 'Not specified'}
-
-Target Audience:
-- Demographics: ${vsl.target_audience?.demographics?.profession || 'professionals'}, ${vsl.target_audience?.demographics?.age_range || 'adults'}
-- Experience Level: ${vsl.target_audience?.demographics?.experience_level || 'various'}
-- Values: ${(vsl.target_audience?.psychographics?.values || []).join(', ') || 'Not specified'}
-
-Core Problem:
-- Primary Pain: ${vsl.core_problem?.primary_pain_point || 'Not specified'}
-- Keeps Them Up: ${vsl.core_problem?.keeps_them_up_at_night || 'Not specified'}
-- Emotional Impact: ${vsl.core_problem?.emotional_impact || 'Not specified'}
-
-Transformation Promise:
-- From: ${vsl.transformation_promise?.from_state?.current_situation || 'Current state'}
-- To: ${vsl.transformation_promise?.to_state?.desired_outcome || 'Desired outcome'}
-- Timeline: ${vsl.transformation_promise?.timeline || 'Not specified'}
-
-CTA: ${vsl.pricing?.value_justification || 'Take action now'}
-
-=== EXTRACTED TONE/VOICE (USE FOR STYLE) ===
-Voice Summary: ${toneSummary.one_sentence_voice}
+  // Build tone summary section
+  const toneSection = `
+Voice: ${toneSummary.one_sentence_voice}
 
 Tone Rules:
 ${toneSummary.tone_rules.map((r, i) => `${i + 1}. ${r}`).join('\n')}
 
-Do Use These Phrases/Patterns:
-${toneSummary.do_phrases.join(', ') || 'None specified'}
+Do Use: ${toneSummary.do_phrases.join(', ') || 'None specified'}
+Avoid: ${toneSummary.dont_phrases.join(', ') || 'None specified'}
+Cadence: ${toneSummary.cadence_notes.join('; ') || 'Natural flow'}
 
-Avoid These Phrases/Patterns:
-${toneSummary.dont_phrases.join(', ') || 'None specified'}
+Example Lines:
+${toneSummary.example_lines.map(l => `"${l}"`).join('\n')}`;
 
-Cadence Notes:
-${toneSummary.cadence_notes.join('; ') || 'Natural flow'}
+  const scriptPrompt = `You are an expert YouTube scriptwriter creating a research-backed, high-retention script.
 
-Example Lines (for style reference):
-${toneSummary.example_lines.map(l => `"${l}"`).join('\n')}
+TOPIC: ${videoTitle}
 
-=== HARD RULES - MUST FOLLOW ===
-1. TWEETS ARE FOR VOICE ONLY: Use the tone summary above to match phrasing and style. Do NOT cite tweets as evidence.
+TARGET LENGTH: ${targetLength} minutes
+${ragSection}
 
-2. MAX 2 TWEET-BASED PROOF MOMENTS: You may use personal observations/experiences from tweets at most 2 times in the entire script. These MUST be:
-   - Paraphrased (no direct quotes)
-   - Framed as "personal observation" or "in my experience" - NOT as objective fact
-   - Noted in your output
+=============================================================
+RESEARCH-BACKED CLAIMS
+=============================================================
 
-3. EACH SECTION MUST HAVE 2+ NON-TWEET VALUE POINTS: Every major section needs at least 2 value points that are NOT from tweets:
-   - A mechanism or step-by-step process
-   - A specific pitfall or mistake to avoid
-   - An original example or case study
-   - A research-backed statistic (from the claims above)
+${claimsSection}
 
-4. FACTUAL CLAIMS NEED SOURCES: Any claim with numbers, percentages, "studies show", or "research indicates" MUST reference one of the research-backed claims above. If you can't tie it to a source, DO NOT USE IT.
+=============================================================
+CONTEXT PROFILE
+=============================================================
 
-5. NO STATS/PERCENTAGES WITHOUT SOURCES: If no external sources are provided, do NOT use any statistics or "studies show/data shows" language.
+Business: ${business.name || 'Not specified'}
+Description: ${business.description || 'Not specified'}
+Type: ${business.type || 'Not specified'}
+Unique Mechanism: ${business.unique_mechanism || 'Not specified'}
+Key Differentiator: ${business.key_differentiator || 'Not specified'}
 
-6. NO GENERIC ADVICE: Every point must be specific to THIS audience and THIS offer.
+Offer: ${offer.name || 'Not specified'}
+Offer Description: ${offer.description || 'Not specified'}
+Offer Type: ${offer.offer_type || 'Not specified'}
+Price Point: ${offer.price_point || 'Not specified'}
+Delivery Method: ${offer.delivery_method || 'Not specified'}
+Main Outcome: ${offer.main_outcome || 'Not specified'}
+Timeline: ${offer.timeline_to_result || 'Not specified'}
+Guarantee: ${offer.guarantee || 'Not specified'}
 
-7. REFERENCE EXAMPLES ARE FOR STRUCTURE ONLY: If reference examples are provided, pattern from their structure, pacing, and flow - do NOT copy verbatim.
+Creator: ${creator.name || 'Not specified'}
+Positioning: ${creator.positioning || 'Not specified'}
+Credibility: ${creator.credibility_claim || 'Not specified'}
+Origin Story: ${creator.origin_story || 'Not specified'}
 
-8. MATCH PACING AND FLOW OF EXAMPLES: Use the reference examples to understand effective patterns, not to replicate words.
+ICP Role: ${icp.demographics?.profession_or_role || 'Not specified'}
+ICP Business Stage: ${icp.demographics?.business_stage || 'Not specified'}
+ICP Experience Level: ${icp.demographics?.experience_level || 'Not specified'}
+ICP Current Situation: ${icp.current_situation || 'Not specified'}
+What They've Tried: ${JSON.stringify(icp.what_theyve_tried || [])}
+Why Previous Solutions Failed: ${icp.why_previous_solutions_failed || 'Not specified'}
 
-=== SCRIPT STRUCTURE ===
-Write a ${targetMinutes}-minute script with:
+Primary Problem: ${icpPainPoints.primary_problem || 'Not specified'}
+Root Cause: ${icpPainPoints.root_cause || 'Not specified'}
+Emotional Pain - Frustrations: ${JSON.stringify(icpPainPoints.emotional_pain?.frustrations || [])}
+Emotional Pain - Fears: ${JSON.stringify(icpPainPoints.emotional_pain?.fears || [])}
+Emotional Pain - Keeps Them Up: ${icpPainPoints.emotional_pain?.keeps_them_up_at_night || 'Not specified'}
+Practical Pain - Time: ${icpPainPoints.practical_pain?.time_impact || 'Not specified'}
+Practical Pain - Financial: ${icpPainPoints.practical_pain?.financial_impact || 'Not specified'}
+Practical Pain - Opportunities Missed: ${icpPainPoints.practical_pain?.opportunities_missed || 'Not specified'}
+Social Pain - Perception: ${icpPainPoints.social_pain?.how_others_perceive_them || 'Not specified'}
+Social Pain - Comparison: ${icpPainPoints.social_pain?.comparison_to_peers || 'Not specified'}
+False Beliefs: ${JSON.stringify(icpPainPoints.false_beliefs || [])}
+Common Objections: ${JSON.stringify(icpPainPoints.common_objections || [])}
 
-1. HOOK (15-30 seconds) - Bold promise or contrarian opener
-2. CREDIBILITY (30-60 seconds) - Brief proof relevant to this audience
-3. PROBLEM (1-2 minutes) - Agitate with specific, researched pain points
-4. SOLUTION OVERVIEW (30-60 seconds) - Name and introduce the framework
-5. DEEP VALUE (${Math.floor(targetMinutes * 0.6)} minutes) - 3-5 actionable steps with research backing
-6. PROOF (Woven throughout) - Use research claims, not tweets
-7. OBJECTION HANDLING - Address naturally with data
-8. CTA (30-60 seconds) - Clear next step tied to transformation
+Transformation From: ${transformation.from_state?.situation || 'Not specified'}
+Transformation From - Struggles: ${JSON.stringify(transformation.from_state?.struggles || [])}
+Transformation From - Limiting Identity: ${transformation.from_state?.limiting_identity || 'Not specified'}
+Transformation To: ${transformation.to_state?.outcome || 'Not specified'}
+Transformation To - Benefits: ${JSON.stringify(transformation.to_state?.benefits || [])}
+Transformation To - New Identity: ${transformation.to_state?.new_identity || 'Not specified'}
+Transformation Timeline: ${transformation.timeline || 'Not specified'}
+Proof Points: ${JSON.stringify(transformation.proof_points || [])}
 
-=== OUTPUT FORMAT ===
-Return a JSON object with:
+Industry Niche: ${industry.niche || 'Not specified'}
+Sub Niche: ${industry.sub_niche || 'Not specified'}
+
+=============================================================
+EXTRACTED TONE/VOICE
+=============================================================
+${toneSection}
+
+=============================================================
+HARD RULES
+=============================================================
+
+1. TWEETS ARE FOR VOICE ONLY - never cite tweet content as proof
+2. MAX 2 tweet-proof items in entire script
+3. Each value section needs 2+ non-tweet value points
+4. FACTUAL CLAIMS NEED SOURCES from research
+5. REFERENCE EXAMPLES ARE FOR STRUCTURE ONLY - do not copy verbatim
+6. Match the PACING and FLOW of examples, not the words
+7. VALUE BEFORE PITCH - deliver real insights before any selling
+8. RETENTION IS EVERYTHING - include re-hooks and open loops throughout
+
+=============================================================
+YOUTUBE RETENTION MECHANICS (CRITICAL)
+=============================================================
+
+SETUP → PAYOFF PRINCIPLE (applies to all body sections):
+- Every payoff requires a setup (clue/hint that prepares audience)
+- Without setup, payoffs feel random or confusing
+- Payoff answers: "Why did I watch this?"
+- Two types: INFORMATIONAL (reveal steps/info) or EMOTIONAL (make them feel something)
+
+BODY SECTION RULES:
+- 300-500 words per section (longer = viewer forgets setup)
+- Logical Progression: Each line leads seamlessly to the next
+- Substantiate claims with data, studies, or personal anecdotes
+- Information must feel EARNED, not just stated
+- Build smaller payoffs toward the MEGA PAYOFF (best insight)
+- Read out loud to catch breaks in logic or awkward phrasing
+
+COMMON MISTAKES TO AVOID:
+- Overloading: Stacking too many payoffs overwhelms audience
+- Underwhelming: Intense buildup + weak conclusion = viewer disappointment
+- Forgetting Setup: Information without context feels out of place
+- Breaking Logic: If viewer gets confused, they leave
+
+OPEN LOOPS:
+- Open 1-2 loops in the first 60 seconds
+- Each loop creates a "I need to see how this ends" feeling
+- Close loops strategically (save one for CTA section)
+- Examples: "I'll share the biggest mistake at the end" / "There's one thing that changes everything - I'll get to that"
+
+RE-HOOKS (between every major section):
+- Mini-hooks that re-engage viewers who might click away
+- Signal value is coming: "But here's where it gets interesting..."
+- Create micro-curiosity: "This next part is what most people miss..."
+- Transition phrases that promise payoff
+
+PATTERN INTERRUPTS:
+- Change energy/pace every 2-3 minutes
+- Can be: tone shift, rhetorical question, surprising statement, quick story
+- Prevents monotony that causes drop-off
+- Mark in script with [PATTERN INTERRUPT]
+
+PACING VARIATION:
+- Fast sections (excitement, lists, energy)
+- Slow sections (important points, emphasis)
+- Never stay at same pace for more than 2 minutes
+
+=============================================================
+YOUTUBE SCRIPT STRUCTURE
+=============================================================
+
+1. HOOK (0:00-0:30)
+   Pattern from HOOK EXAMPLES above.
+   
+   CORE OBJECTIVE: Deliver two things in first 2.5-4 seconds:
+   • Topic Clarity - Immediate understanding of the subject
+   • On-Target Curiosity - Convince viewer the topic is relevant to THEM
+   
+   THE 3-STEP PSYCHOLOGY FORMULA:
+   
+   Step 1: CONTEXT LEAN-IN (1-2 seconds)
+   - Establish topic clarity
+   - Build common ground or state a benefit
+   - Make viewer think "yes, this is for me"
+   
+   Step 2: SCROLL STOP INTERJECTION
+   - Use a "stun gun" word: "But," "However," "Yet," "Except"
+   - Interrupts the initial thought pattern
+   - Creates micro-tension
+   
+   Step 3: CONTRARIAN SNAPBACK
+   - Pivot to shocking or unexpected direction
+   - Closes the curiosity loop
+   - Viewer MUST keep watching to resolve the tension
+   
+   THE 6 POWER WORDS (stack these):
+   - Subject: Who/what the video is about ("I," "You," "This strategy")
+   - Action: The specific verb/movement ("grew," "built," "discovered")
+   - Objective: The shocking end result ("100k subs," "$50k/month")
+   - Contrast: Compare outcome to base state ("from 0 to," "without spending")
+   - Proof (optional): Why trust you ("again," "for the 3rd time")
+   - Time (optional): Urgency/speed ("in 30 days," "this week")
+   
+   EXECUTION RULES:
+   - Speed to Value: Leapfrog the payoff to the top. NO greetings, NO "Hey guys"
+   - Staccato Sentences: Short, punchy. Maximum value per word
+   - Use "You/Your" instead of "I/Me" to increase relevance
+   - Write at 6th-grade reading level with active voice
+   - Visual + Text + Spoken hook must align (say the same thing)
+   
+   Open loop here: Plant something you'll pay off later in the video.
+
+2. SETUP + QUICK CREDIBILITY (0:30-1:30)
+   
+   Required elements:
+   - One-line credibility: "${creator.credibility_claim || 'Brief credibility statement'}" (brief, not braggy)
+   - Roadmap: What they'll learn (3 things max)
+   - Second open loop: "And at the end, I'll share [the thing everyone gets wrong / the shortcut / the mistake]"
+   
+   Keep this TIGHT. Under 60 seconds. Viewers are still deciding whether to stay.
+
+3. VALUE POINT 1 (1:30-4:00)
+   Pattern from BODY EXAMPLES above.
+   
+   Deliver your SECOND-BEST insight (save the best for Point 2).
+   
+   SETUP → PAYOFF STRUCTURE:
+   Every payoff needs a setup. The setup is the clue/hint that prepares the audience.
+   Without setup, payoffs feel random or confusing.
+   
+   This section is an INFORMATIONAL PAYOFF - reveal specific information they want to know.
+   
+   Structure:
+   - SETUP: What it is (the concept/strategy) + why they should care
+   - BUILD: Why it matters (connect to ${icpPainPoints.primary_problem || 'their primary problem'})
+   - PAYOFF: How it works (the actionable revelation they came for)
+   - SUBSTANTIATE: Story/example/data to prove it (use research claims)
+   
+   BODY WRITING RULES:
+   - Logical Progression: Each line leads seamlessly to the next
+   - Keep section 300-500 words (longer = viewer forgets setup)
+   - Substantiate claims with data, studies, or personal anecdotes
+   - Information must feel EARNED, not just stated
+   
+   End with RE-HOOK into next point (this is a mini-setup for next payoff):
+   "But this only works if you understand [next concept]..."
+   "Now, most people stop here. But there's something even more important..."
+
+4. VALUE POINT 2 (4:00-7:00)
+   Pattern from BODY EXAMPLES above.
+   
+   Deliver your BEST insight. This is the MEGA PAYOFF section - the main reason they watched.
+   
+   SETUP → PAYOFF STRUCTURE:
+   Build up gradually toward this mega payoff. Use smaller moments of interest leading here.
+   
+   Structure:
+   - SETUP: What it is + create anticipation
+   - BUILD: Why it matters (connect to ${icpPainPoints.root_cause || 'the root cause'})
+   - DEEPER BUILD: How it works (more tactical than Point 1)
+   - MEGA PAYOFF: The specific revelation/step they've been waiting for
+   - SUBSTANTIATE: Specific example or mini case study with data
+   
+   [PATTERN INTERRUPT] somewhere in this section - change pace, tell quick story, ask rhetorical question.
+   
+   Weave in proof naturally (not a separate section):
+   "When we did this with [client type], [specific result]..."
+   
+   AVOID THESE MISTAKES:
+   - Overloading: Don't stack too many payoffs - one mega payoff per section
+   - Underwhelming: If buildup is intense, payoff must match (don't be predictable)
+   - Forgetting setup: Every piece of information needs context first
+   
+   Keep section 300-500 words. Substantiate with data/anecdotes.
+   
+   End with RE-HOOK:
+   "There's one more thing that ties this all together..."
+
+5. VALUE POINT 3 + BRIDGE (7:00-9:30)
+   
+   Third insight OR common mistake to avoid.
+   
+   PAYOFF TYPE: Can be informational OR emotional payoff here.
+   - Informational: Final tactical piece they need
+   - Emotional: Relief ("here's why it's not your fault") or fear ("here's what happens if you don't")
+   
+   Structure:
+   - SETUP: What it is + context
+   - BUILD: Why it matters
+   - PAYOFF: How to apply it / what to avoid
+   - SUBSTANTIATE: Data or anecdote
+   
+   Keep section 300-500 words.
+   
+   BRIDGE TO SOFT PIVOT:
+   This section ends by connecting the value back to their deeper situation.
+   Start transitioning from "here's the knowledge" to "here's why you might still struggle."
+   
+   The bridge is a SETUP for the soft pivot payoff.
+   
+   "Now, you have the framework. But here's what I see happen to most [ICP]..."
+
+6. SOFT PIVOT (9:30-10:30)
+   
+   NOT heavy VSL-style agitation. Gentle acknowledgment of reality.
+   
+   Structure:
+   - Acknowledge the gap: "Knowing this and implementing it are different things"
+   - Light agitation: Reference frustrations naturally
+   - Common struggle: Why people who know this still fail (hint: they need help/system)
+   
+   This should feel like a friend being honest, not a salesperson creating pain.
+   
+   "Look, I just gave you everything. You could go do this yourself. But if you're like most [ICP], you're thinking..."
+
+7. CTA + CLOSE LOOP (10:30-11:30)
+   Pattern from CTA EXAMPLE above.
+   
+   Structure:
+   - Close the open loop from earlier: "Remember when I said I'd share [the thing]? Here it is..."
+   - Natural transition to offer (NOT "So if you want to buy...")
+   - Present ${offer.name || 'the offer'} as logical next step
+   - ${offer.guarantee || 'Guarantee'} if relevant
+   - Clear action: What to do next
+   
+   Optional: Handle one objection naturally
+   "If you're thinking [objection], here's the thing..."
+   
+   CTA should feel like: "If you want help implementing this, here's how."
+   NOT like: "Buy my thing because you're broken without it."
+
+8. OUTRO (11:30-12:00)
+   
+   Structure:
+   - Recap ONE key takeaway (the thing they should remember)
+   - Callback to opening or memorable line
+   - End on confident/high note
+   - Subscribe/like (brief, don't beg)
+   
+   "That's [key concept]. If you got value, subscribe. See you in the next one."
+
+=============================================================
+LENGTH ADAPTATION
+=============================================================
+
+If TARGET LENGTH is 8-10 minutes:
+- Combine Value Points 2 and 3
+- Shorter examples
+- Tighter transitions
+- Soft Pivot can be 30 seconds
+
+If TARGET LENGTH is 12-15 minutes:
+- Full structure as written
+- Deeper examples
+- Can add mini-tangent or story
+
+If TARGET LENGTH is 15-20 minutes:
+- Add Value Point 4
+- Longer case studies
+- Can expand Soft Pivot
+- Multiple proof weaves
+
+=============================================================
+OUTPUT FORMAT
+=============================================================
+
+Return JSON:
 {
-  "script": "The complete script text with ## headers and [TIMESTAMP] markers",
+  "script": "The complete script with ## headers and [TIMESTAMP] markers",
+  "retention_elements": {
+    "open_loops": [
+      { "location": "hook", "loop": "description of loop", "closed_at": "section name" },
+      { "location": "setup", "loop": "description of loop", "closed_at": "section name" }
+    ],
+    "re_hooks": [
+      { "after_section": "value_1", "re_hook_text": "..." },
+      { "after_section": "value_2", "re_hook_text": "..." }
+    ],
+    "pattern_interrupts": [
+      { "location": "value_2", "type": "story|question|tone_shift|surprising_stat" }
+    ]
+  },
   "context_use_log": {
-    "tweet_proof_items_used": <number 0-2>,
-    "tweet_proof_items": ["brief description of each tweet-based proof used"],
+    "tweet_proof_items_used": number,
+    "tweet_proof_items": [...],
     "sections": [
-      { "name": "Hook", "non_tweet_value_points": <number> },
-      { "name": "Problem", "non_tweet_value_points": <number> },
-      { "name": "Mechanism", "non_tweet_value_points": <number> },
-      { "name": "Steps", "non_tweet_value_points": <number> },
-      { "name": "Mistakes", "non_tweet_value_points": <number> },
-      { "name": "CTA", "non_tweet_value_points": <number> }
+      { "name": "hook", "non_tweet_value_points": number },
+      { "name": "setup_credibility", "non_tweet_value_points": number },
+      { "name": "value_1", "non_tweet_value_points": number },
+      { "name": "value_2", "non_tweet_value_points": number },
+      { "name": "value_3_bridge", "non_tweet_value_points": number },
+      { "name": "soft_pivot", "non_tweet_value_points": number },
+      { "name": "cta", "non_tweet_value_points": number },
+      { "name": "outro", "non_tweet_value_points": number }
     ],
     "rag_examples_used": {
-      "hooks": ["source names used"],
-      "body": ["source names used"],
-      "cta": ["source names used"],
-      "proof": ["source names used"],
-      "objection": ["source names used"]
+      "hooks": ["source1", "source2"],
+      "body": ["source1", "source2"],
+      "cta": ["source"],
+      "proof": ["source"],
+      "objection": ["source"]
     }
   }
 }
 
 Return ONLY valid JSON.`;
 
-  console.log("Generating script with tone summary...");
+  console.log("Generating script with comprehensive YouTube retention prompt...");
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -696,7 +1001,7 @@ Return ONLY valid JSON.`;
     },
     body: JSON.stringify({
       model: "claude-opus-4-5-20251101",
-      max_tokens: 8000,
+      max_tokens: 12000,
       messages: [
         { role: "user", content: scriptPrompt }
       ],
@@ -714,23 +1019,26 @@ Return ONLY valid JSON.`;
   
   // Parse JSON response
   let script = "";
+  let retentionElements: RetentionElements | undefined;
   let contextUseLog: ContextUseLog = {
     tweet_proof_items_used: 0,
     tweet_proof_items: [],
     sections: [
-      { name: "Hook", non_tweet_value_points: 2 },
-      { name: "Problem", non_tweet_value_points: 2 },
-      { name: "Mechanism", non_tweet_value_points: 2 },
-      { name: "Steps", non_tweet_value_points: 2 },
-      { name: "Mistakes", non_tweet_value_points: 2 },
-      { name: "CTA", non_tweet_value_points: 2 }
+      { name: "hook", non_tweet_value_points: 2 },
+      { name: "setup_credibility", non_tweet_value_points: 2 },
+      { name: "value_1", non_tweet_value_points: 2 },
+      { name: "value_2", non_tweet_value_points: 2 },
+      { name: "value_3_bridge", non_tweet_value_points: 2 },
+      { name: "soft_pivot", non_tweet_value_points: 2 },
+      { name: "cta", non_tweet_value_points: 2 },
+      { name: "outro", non_tweet_value_points: 2 }
     ],
     rag_examples_used: ragResults ? {
-      hooks: ragResults.hooks?.map(h => h.source || 'Unknown') || [],
-      body: ragResults.body_sections?.map(b => b.source || 'Unknown') || [],
-      cta: ragResults.cta_sections?.map(c => c.source || 'Unknown') || [],
-      proof: ragResults.proof_sections?.map(p => p.source || 'Unknown') || [],
-      objection: ragResults.objection_handlers?.map(o => o.source || 'Unknown') || []
+      hooks: ragResults.hooks?.slice(0, 2).map(h => h.source || 'Unknown') || [],
+      body: ragResults.body_sections?.slice(0, 2).map(b => b.source || 'Unknown') || [],
+      cta: ragResults.cta_sections?.slice(0, 1).map(c => c.source || 'Unknown') || [],
+      proof: ragResults.proof_sections?.slice(0, 1).map(p => p.source || 'Unknown') || [],
+      objection: ragResults.objection_handlers?.slice(0, 1).map(o => o.source || 'Unknown') || []
     } : undefined
   };
 
@@ -739,8 +1047,14 @@ Return ONLY valid JSON.`;
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       script = parsed.script || text;
+      if (parsed.retention_elements) {
+        retentionElements = parsed.retention_elements;
+      }
       if (parsed.context_use_log) {
-        contextUseLog = parsed.context_use_log;
+        contextUseLog = {
+          ...parsed.context_use_log,
+          rag_examples_used: parsed.context_use_log.rag_examples_used || contextUseLog.rag_examples_used
+        };
       }
     } else {
       script = text;
@@ -762,7 +1076,7 @@ Return ONLY valid JSON.`;
     validation = validateScript(script, alignedClaims, contextUseLog);
   }
 
-  return { script, validation, contextUseLog };
+  return { script, validation, contextUseLog, retentionElements };
 }
 
 // Bias Corrector Pass - now returns updated context use log
@@ -919,7 +1233,7 @@ serve(async (req) => {
 
     // Stage 4: Script Generation (with RAG examples)
     console.log("Stage 4: Generating script...");
-    const { script, validation, contextUseLog } = await runScriptStage(
+    const { script, validation, contextUseLog, retentionElements } = await runScriptStage(
       topic,
       context_profile,
       toneSummary,
@@ -941,6 +1255,7 @@ serve(async (req) => {
       alignment_checklist: checklist,
       tone_summary: toneSummary,
       context_use_log: contextUseLog,
+      retention_elements: retentionElements,
       validation: validation,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
