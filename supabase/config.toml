@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.rag-retrieve]
 verify_jwt = false
+
+[functions.create-google-doc]
+verify_jwt = false

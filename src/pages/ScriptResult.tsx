@@ -133,12 +133,45 @@ const ScriptResult = () => {
   };
 
   const handleOpenGoogleDoc = async () => {
-    await navigator.clipboard.writeText(currentScript);
-    window.open('https://docs.google.com/document/create', '_blank');
-    toast({ 
-      title: 'Script copied!', 
-      description: 'Paste (Cmd+V / Ctrl+V) into the new Google Doc' 
-    });
+    setIsLoading(true);
+    try {
+      const title = businessContext?.video_title || 'YouTube Script';
+      const { data, error } = await supabase.functions.invoke('create-google-doc', {
+        body: { 
+          title: `${title} - Variation ${variation}`,
+          content: currentScript,
+        },
+      });
+      
+      if (error) throw error;
+      
+      if (data?.url) {
+        window.open(data.url, '_blank');
+        toast({ 
+          title: 'Google Doc created!', 
+          description: 'Your script is ready to edit' 
+        });
+      } else {
+        throw new Error('No document URL returned');
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create Google Doc';
+      console.error('Google Doc error:', error);
+      toast({ 
+        title: 'Could not create Google Doc', 
+        description: errorMessage,
+        variant: 'destructive' 
+      });
+      // Fallback to copy + open
+      await navigator.clipboard.writeText(currentScript);
+      window.open('https://docs.google.com/document/create', '_blank');
+      toast({ 
+        title: 'Script copied instead', 
+        description: 'Paste (Cmd+V / Ctrl+V) into the new Google Doc' 
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDownloadDocx = async () => {
