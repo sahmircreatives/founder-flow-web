@@ -23,11 +23,7 @@ interface ResearchPack {
   claims: SupportedClaim[];
 }
 
-interface AlignmentChecklist {
-  audience_match: string;
-  offer_relevance: string;
-  pain_point_addressed: string;
-  cta_alignment: string;
+interface AlignmentResult {
   filtered_claims_count: number;
   original_claims_count: number;
 }
@@ -270,7 +266,7 @@ Return ONLY valid JSON, no other text.`
 async function runAlignmentStage(
   researchPack: ResearchPack, 
   contextProfile: any
-): Promise<{ alignedClaims: SupportedClaim[]; checklist: AlignmentChecklist }> {
+): Promise<{ alignedClaims: SupportedClaim[]; stats: AlignmentResult }> {
   const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
   
   const vsl = contextProfile?.vsl_context || {};
@@ -284,11 +280,7 @@ async function runAlignmentStage(
   if (!ANTHROPIC_API_KEY || originalCount === 0) {
     return {
       alignedClaims: [],
-      checklist: {
-        audience_match: "No claims to align",
-        offer_relevance: "N/A",
-        pain_point_addressed: "N/A",
-        cta_alignment: "N/A",
+      stats: {
         filtered_claims_count: 0,
         original_claims_count: originalCount,
       }
@@ -329,13 +321,7 @@ INSTRUCTIONS:
 
 Return a JSON object with:
 {
-  "aligned_claims": [array of filtered claims with claim, source_url, relevance_score],
-  "checklist": {
-    "audience_match": "How these claims match the target audience",
-    "offer_relevance": "How claims support the product/service",
-    "pain_point_addressed": "Which pain points are validated by research",
-    "cta_alignment": "How claims build toward the transformation promise"
-  }
+  "aligned_claims": [array of filtered claims with claim, source_url, relevance_score]
 }
 
 Return ONLY valid JSON.`
@@ -348,11 +334,7 @@ Return ONLY valid JSON.`
       console.error("Alignment stage failed:", response.status);
       return {
         alignedClaims: researchPack.claims,
-        checklist: {
-          audience_match: "Alignment failed - using original claims",
-          offer_relevance: "N/A",
-          pain_point_addressed: "N/A",
-          cta_alignment: "N/A",
+        stats: {
           filtered_claims_count: originalCount,
           original_claims_count: originalCount,
         }
@@ -367,8 +349,7 @@ Return ONLY valid JSON.`
       const result = JSON.parse(jsonMatch[0]);
       return {
         alignedClaims: result.aligned_claims || [],
-        checklist: {
-          ...result.checklist,
+        stats: {
           filtered_claims_count: result.aligned_claims?.length || 0,
           original_claims_count: originalCount,
         }
@@ -377,11 +358,7 @@ Return ONLY valid JSON.`
 
     return {
       alignedClaims: researchPack.claims,
-      checklist: {
-        audience_match: "Parse failed",
-        offer_relevance: "N/A",
-        pain_point_addressed: "N/A", 
-        cta_alignment: "N/A",
+      stats: {
         filtered_claims_count: originalCount,
         original_claims_count: originalCount,
       }
@@ -390,11 +367,7 @@ Return ONLY valid JSON.`
     console.error("Alignment error:", error);
     return {
       alignedClaims: researchPack.claims,
-      checklist: {
-        audience_match: "Error occurred",
-        offer_relevance: "N/A",
-        pain_point_addressed: "N/A",
-        cta_alignment: "N/A",
+      stats: {
         filtered_claims_count: originalCount,
         original_claims_count: originalCount,
       }
@@ -454,7 +427,7 @@ Return a JSON object with these fields (respect hard caps):
   "do_phrases": ["max 10 phrases/words they frequently use"],
   "dont_phrases": ["max 10 phrases/words they avoid or wouldn't use"],
   "cadence_notes": ["Notes about rhythm, paragraph length, sentence structure"],
-  "example_lines": ["max 6 short example lines that capture the style - STRIP any facts/stats"]
+  "example_lines": ["max 6 lines demonstrating rhythm/cadence ONLY - zero facts, zero specifics, zero proof"]
 }
 
 HARD CAPS: 
@@ -694,14 +667,12 @@ ${toneSection}
 HARD RULES
 =============================================================
 
-1. TWEETS ARE FOR VOICE ONLY - never cite tweet content as proof
-2. MAX 2 tweet-proof items in entire script
-3. Each value section needs 2+ non-tweet value points
-4. FACTUAL CLAIMS NEED SOURCES from research
-5. REFERENCE EXAMPLES ARE FOR STRUCTURE ONLY - do not copy verbatim
-6. Match the PACING and FLOW of examples, not the words
-7. VALUE BEFORE PITCH - deliver real insights before any selling
-8. RETENTION IS EVERYTHING - include re-hooks and open loops throughout
+1. MAX 2 tweet-proof items in entire script
+2. Each section needs 2+ non-tweet value points
+3. REFERENCE EXAMPLES ARE FOR STRUCTURE ONLY - do not copy verbatim
+4. Match the PACING and FLOW of examples, not the words
+5. VALUE BEFORE PITCH - deliver real insights before any selling
+6. RETENTION IS EVERYTHING - include re-hooks and open loops throughout
 
 =============================================================
 YOUTUBE RETENTION MECHANICS (CRITICAL)
@@ -1188,7 +1159,7 @@ serve(async (req) => {
 
     // Stage 2: Alignment
     console.log("Stage 2: Running alignment...");
-    const { alignedClaims, checklist } = await runAlignmentStage(researchPack, context_profile);
+    const { alignedClaims, stats: alignmentStats } = await runAlignmentStage(researchPack, context_profile);
     console.log(`Alignment kept ${alignedClaims.length} of ${researchPack.claims.length} claims`);
 
     // Stage 3: Tone Distillation
@@ -1252,7 +1223,7 @@ serve(async (req) => {
         sources: researchPack.sources,
         claims: alignedClaims,
       },
-      alignment_checklist: checklist,
+      alignment_stats: alignmentStats,
       tone_summary: toneSummary,
       context_use_log: contextUseLog,
       retention_elements: retentionElements,
