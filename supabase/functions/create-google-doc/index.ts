@@ -107,7 +107,7 @@ serve(async (req) => {
     // Use the shared folder - this is critical since service accounts have no storage quota
     const targetFolderId = folderId || '1rOksmpebbt5gw9G5HhO-2wCvTz1uL74P';
     
-    const createDocResponse = await fetch('https://www.googleapis.com/drive/v3/files', {
+    const createDocResponse = await fetch('https://www.googleapis.com/drive/v3/files?supportsAllDrives=true', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
