@@ -79,12 +79,24 @@ serve(async (req) => {
       throw new Error('Content is required');
     }
 
-    const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON');
+    let serviceAccountJson: string | undefined = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON');
     if (!serviceAccountJson) {
       throw new Error('Google service account credentials not configured');
     }
 
-    const serviceAccount: ServiceAccountKey = JSON.parse(serviceAccountJson);
+    // Handle potential double-encoding or extra quotes
+    let cleanedJson: string = serviceAccountJson.trim();
+    if (cleanedJson.startsWith('"') && cleanedJson.endsWith('"')) {
+      cleanedJson = cleanedJson.slice(1, -1);
+    }
+    // Handle escaped JSON (double-encoded)
+    if (cleanedJson.startsWith('\\"') || cleanedJson.includes('\\\"')) {
+      cleanedJson = JSON.parse(`"${cleanedJson}"`);
+    }
+    
+    console.log('Parsing service account JSON, first 50 chars:', cleanedJson.substring(0, 50));
+    
+    const serviceAccount: ServiceAccountKey = JSON.parse(cleanedJson);
     console.log('Getting access token for:', serviceAccount.client_email);
     
     const accessToken = await getAccessToken(serviceAccount);
