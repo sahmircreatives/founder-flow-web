@@ -920,9 +920,32 @@ If TARGET LENGTH is 15-20 minutes:
 OUTPUT FORMAT
 =============================================================
 
+CRITICAL: The script must read like a natural creator script, NOT like AI output.
+
+DO NOT include:
+- Timestamps like [0:00-0:30], [1:30-4:00]
+- Markdown headers like ## HOOK, ## VALUE POINT 1
+- Section labels in brackets like [PATTERN INTERRUPT]
+- Any AI-style formatting
+
+DO include:
+- Simple section breaks with just the section name (e.g., "HOOK" on its own line)
+- Natural paragraph breaks
+- The actual spoken words a creator would read
+
+Example of what NOT to write:
+## HOOK [0:00-0:30]
+
+Billionaires pay less in taxes than you do.
+
+Example of what TO write:
+HOOK
+
+Billionaires pay less in taxes than you do
+
 Return JSON:
 {
-  "script": "The complete script with ## headers and [TIMESTAMP] markers",
+  "script": "The complete script with simple section labels only (no timestamps, no markdown, no brackets)",
   "retention_elements": {
     "open_loops": [
       { "location": "hook", "loop": "description of loop", "closed_at": "section name" },
