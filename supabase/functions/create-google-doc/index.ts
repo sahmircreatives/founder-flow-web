@@ -102,49 +102,33 @@ serve(async (req) => {
     const accessToken = await getAccessToken(serviceAccount);
     console.log('Access token obtained successfully');
 
-    // Create a new Google Doc
-    const createDocResponse = await fetch('https://docs.googleapis.com/v1/documents', {
+    // Step 1: Create a Google Doc using Drive API (more reliable for service accounts)
+    const docTitle = title || 'YouTube Script';
+    
+    const createDocResponse = await fetch('https://www.googleapis.com/drive/v3/files', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        title: title || 'YouTube Script',
+        name: docTitle,
+        mimeType: 'application/vnd.google-apps.document',
+        parents: folderId ? [folderId] : undefined,
       }),
     });
 
     if (!createDocResponse.ok) {
       const errorText = await createDocResponse.text();
-      console.error('Failed to create document:', errorText);
+      console.error('Failed to create document via Drive API:', errorText);
       throw new Error(`Failed to create Google Doc: ${errorText}`);
     }
 
-    const doc = await createDocResponse.json();
-    const documentId = doc.documentId;
-    console.log('Document created:', documentId);
+    const driveFile = await createDocResponse.json();
+    const documentId = driveFile.id;
+    console.log('Document created via Drive API:', documentId);
 
-    // If folderId is provided, move the document to that folder
-    if (folderId) {
-      const moveResponse = await fetch(
-        `https://www.googleapis.com/drive/v3/files/${documentId}?addParents=${folderId}&fields=id,parents`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      
-      if (!moveResponse.ok) {
-        console.warn('Could not move to folder, document created in root:', await moveResponse.text());
-      } else {
-        console.log('Document moved to folder:', folderId);
-      }
-    }
-
-    // Insert the content into the document
+    // Step 2: Insert the content into the document using Docs API
     const requests = [
       {
         insertText: {
