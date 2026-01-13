@@ -40,7 +40,7 @@ async function getAccessToken(serviceAccount: ServiceAccountKey): Promise<string
     { alg: 'RS256', typ: 'JWT' },
     {
       iss: serviceAccount.client_email,
-      scope: 'https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/drive.file',
+      scope: 'https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/drive',
       aud: serviceAccount.token_uri,
       exp: getNumericDate(3600),
       iat: getNumericDate(0),
