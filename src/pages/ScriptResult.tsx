@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Copy, Download, ArrowLeft, Check, Loader2, ArrowRight, Sparkles, X, BookOpen, CheckCircle2, ExternalLink, AlertTriangle, Mic, BarChart3 } from 'lucide-react';
+import { Copy, Download, ArrowLeft, Check, Loader2, ArrowRight, Sparkles, X, BookOpen, CheckCircle2, ExternalLink, AlertTriangle, Mic, BarChart3, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-
+import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
+import { saveAs } from 'file-saver';
 interface ResearchSource {
   title: string;
   url: string;
@@ -131,6 +132,43 @@ const ScriptResult = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleDownloadDocx = async () => {
+    const title = businessContext?.video_title || 'YouTube Script';
+    const paragraphs = currentScript.split('\n\n').map((para: string) => {
+      // Check if it's a section header (all caps or starts with ##)
+      const isHeader = para === para.toUpperCase() && para.length < 50;
+      if (isHeader) {
+        return new Paragraph({
+          text: para,
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 400, after: 200 },
+        });
+      }
+      return new Paragraph({
+        children: [new TextRun({ text: para })],
+        spacing: { after: 200 },
+      });
+    });
+
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [
+          new Paragraph({
+            text: title,
+            heading: HeadingLevel.HEADING_1,
+            spacing: { after: 400 },
+          }),
+          ...paragraphs,
+        ],
+      }],
+    });
+
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `${title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${variation}.docx`);
+    toast({ title: 'Downloaded as .docx', description: 'Upload to Google Drive to convert to Google Docs' });
+  };
+
   const scrollToBooking = () => {
     setShowModal(false);
     navigate('/');
@@ -223,9 +261,13 @@ const ScriptResult = () => {
                 {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
                 {copied ? 'Copied' : 'Copy'}
               </Button>
-              <Button onClick={handleDownload} disabled={isLoading} className="gradient-bg text-white hover:opacity-90">
+              <Button variant="outline" onClick={handleDownload} disabled={isLoading} className="border-border text-foreground hover:bg-secondary">
                 <Download className="w-4 h-4 mr-2" />
-                Download
+                .txt
+              </Button>
+              <Button onClick={handleDownloadDocx} disabled={isLoading} className="gradient-bg text-white hover:opacity-90">
+                <FileText className="w-4 h-4 mr-2" />
+                .docx
               </Button>
             </div>
           </div>
