@@ -132,6 +132,15 @@ const ScriptResult = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleOpenGoogleDoc = async () => {
+    await navigator.clipboard.writeText(currentScript);
+    window.open('https://docs.google.com/document/create', '_blank');
+    toast({ 
+      title: 'Script copied!', 
+      description: 'Paste (Cmd+V / Ctrl+V) into the new Google Doc' 
+    });
+  };
+
   const handleDownloadDocx = async () => {
     const title = businessContext?.video_title || 'YouTube Script';
     const paragraphs = currentScript.split('\n\n').map((para: string) => {
@@ -265,9 +274,9 @@ const ScriptResult = () => {
                 <Download className="w-4 h-4 mr-2" />
                 .txt
               </Button>
-              <Button onClick={handleDownloadDocx} disabled={isLoading} className="gradient-bg text-white hover:opacity-90">
+              <Button onClick={handleOpenGoogleDoc} disabled={isLoading} className="gradient-bg text-white hover:opacity-90">
                 <FileText className="w-4 h-4 mr-2" />
-                .docx
+                Google Doc
               </Button>
             </div>
           </div>
