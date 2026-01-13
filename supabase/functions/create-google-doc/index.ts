@@ -102,8 +102,10 @@ serve(async (req) => {
     const accessToken = await getAccessToken(serviceAccount);
     console.log('Access token obtained successfully');
 
-    // Step 1: Create a Google Doc using Drive API (more reliable for service accounts)
+    // Step 1: Create a Google Doc using Drive API in the shared folder
     const docTitle = title || 'YouTube Script';
+    // Use the shared folder - this is critical since service accounts have no storage quota
+    const targetFolderId = folderId || '1rOksmpebbt5gw9G5HhO-2wCvTz1uL74P';
     
     const createDocResponse = await fetch('https://www.googleapis.com/drive/v3/files', {
       method: 'POST',
@@ -114,7 +116,7 @@ serve(async (req) => {
       body: JSON.stringify({
         name: docTitle,
         mimeType: 'application/vnd.google-apps.document',
-        parents: folderId ? [folderId] : undefined,
+        parents: [targetFolderId],
       }),
     });
 
