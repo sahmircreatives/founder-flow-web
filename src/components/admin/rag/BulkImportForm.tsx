@@ -43,7 +43,6 @@ export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
   const [isChunking, setIsChunking] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [transcript, setTranscript] = useState("");
-  const [sourceName, setSourceName] = useState("");
   const [chunks, setChunks] = useState<ChunkedSection[]>([]);
 
   const handleChunk = async () => {
@@ -56,10 +55,7 @@ export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
 
     try {
       const { data, error } = await supabase.functions.invoke("rag-chunk-transcript", {
-        body: {
-          transcript,
-          source_name: sourceName,
-        },
+        body: { transcript },
       });
 
       if (error) throw error;
@@ -170,7 +166,6 @@ export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
       toast.success(`Imported ${successCount} chunks successfully`);
       setChunks([]);
       setTranscript("");
-      setSourceName("");
       onSuccess();
     }
     if (errorCount > 0) {
@@ -206,14 +201,6 @@ export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
             </p>
           </div>
 
-          <div className="space-y-2">
-            <Label>Source Name</Label>
-            <Input
-              placeholder="e.g., Alex Hormozi - Video Title"
-              value={sourceName}
-              onChange={(e) => setSourceName(e.target.value)}
-            />
-          </div>
 
           <Button
             onClick={handleChunk}
