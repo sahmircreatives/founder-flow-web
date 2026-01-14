@@ -31,7 +31,7 @@ interface AlignmentResult {
 interface ToneSummary {
   one_sentence_voice: string;
   tone_rules: string[];
-  do_phrases: string[];
+  writing_patterns: string[];  // Style patterns like "Opens with bold claims", NOT exact phrases
   dont_phrases: string[];
   cadence_notes: string[];
   example_lines: string[];
@@ -382,7 +382,7 @@ async function runToneDistillationStage(tweets: string): Promise<ToneSummary> {
   const defaultTone: ToneSummary = {
     one_sentence_voice: "Professional yet conversational tone",
     tone_rules: [],
-    do_phrases: [],
+    writing_patterns: [],
     dont_phrases: [],
     cadence_notes: [],
     example_lines: []
@@ -414,8 +414,9 @@ CRITICAL: This is STYLE ONLY. Do NOT extract:
 - Proof points or evidence
 - Specific examples or case studies
 - Anything that could be used as "proof" in content
+- EXACT PHRASES or specific words to copy
 
-ONLY extract writing patterns, cadence, and personality.
+ONLY extract abstract writing patterns, cadence, and personality traits.
 
 TWEETS:
 ${tweets}
@@ -424,15 +425,20 @@ Return a JSON object with these fields (respect hard caps):
 {
   "one_sentence_voice": "A single sentence describing the overall voice/personality",
   "tone_rules": ["max 10 rules about HOW they write - e.g., 'Uses short punchy sentences', 'Starts with questions'"],
-  "do_phrases": ["max 10 phrases/words they frequently use"],
+  "writing_patterns": ["max 10 ABSTRACT style patterns - e.g., 'Opens with bold contrarian claims', 'Uses second-person you heavily', 'Ends sentences with incomplete thoughts', 'Mixes casual slang with business terms' - NOT specific phrases to copy"],
   "dont_phrases": ["max 10 phrases/words they avoid or wouldn't use"],
   "cadence_notes": ["Notes about rhythm, paragraph length, sentence structure"],
   "example_lines": ["max 6 lines demonstrating rhythm/cadence ONLY - zero facts, zero specifics, zero proof"]
 }
 
+IMPORTANT: 
+- writing_patterns should describe PATTERNS, not exact words
+- BAD: "Uses 'Here's the thing'" (this is copying)
+- GOOD: "Opens points with a setup phrase before the insight" (this is a pattern)
+
 HARD CAPS: 
 - tone_rules: max 10 items
-- do_phrases: max 10 items  
+- writing_patterns: max 10 items  
 - dont_phrases: max 10 items
 - example_lines: max 6 items
 
@@ -456,7 +462,7 @@ Return ONLY valid JSON.`
       return {
         one_sentence_voice: result.one_sentence_voice || defaultTone.one_sentence_voice,
         tone_rules: (result.tone_rules || []).slice(0, 10),
-        do_phrases: (result.do_phrases || []).slice(0, 10),
+        writing_patterns: (result.writing_patterns || []).slice(0, 10),
         dont_phrases: (result.dont_phrases || []).slice(0, 10),
         cadence_notes: result.cadence_notes || [],
         example_lines: (result.example_lines || []).slice(0, 6),
@@ -634,11 +640,13 @@ Voice: ${toneSummary.one_sentence_voice}
 Tone Rules:
 ${toneSummary.tone_rules.map((r, i) => `${i + 1}. ${r}`).join('\n')}
 
-Do Use: ${toneSummary.do_phrases.join(', ') || 'None specified'}
+Writing Patterns (emulate these styles, don't copy exact words):
+${toneSummary.writing_patterns.map((p, i) => `${i + 1}. ${p}`).join('\n') || 'None specified'}
+
 Avoid: ${toneSummary.dont_phrases.join(', ') || 'None specified'}
 Cadence: ${toneSummary.cadence_notes.join('; ') || 'Natural flow'}
 
-Example Lines:
+Example Lines (for rhythm/cadence reference only):
 ${toneSummary.example_lines.map(l => `"${l}"`).join('\n')}`;
 
   const scriptPrompt = `You are an expert YouTube scriptwriter creating a research-backed, high-retention script.

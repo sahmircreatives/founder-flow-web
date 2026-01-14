@@ -101,11 +101,11 @@ export interface VoiceData {
   dont_phrases: string[];
 }
 
-// Tone Summary (extracted from tweets - style only)
+// Tone Summary (extracted from tweets - style patterns only)
 export interface ToneSummary {
   one_sentence_voice: string;
   tone_rules: string[];
-  do_phrases: string[];
+  writing_patterns: string[];  // Abstract style patterns, NOT exact phrases
   dont_phrases: string[];
   cadence_notes: string[];
   example_lines: string[];
