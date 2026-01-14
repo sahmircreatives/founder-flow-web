@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Sparkles, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -19,9 +18,6 @@ interface ChunkedSection {
   type: "hook" | "body" | "cta" | "proof" | "objection_handler";
   content: string;
   topic_tags: string[];
-  niche: string;
-  sub_niche: string;
-  offer_type: string;
   source: string;
   quality_notes: string;
   selected?: boolean;
@@ -43,34 +39,16 @@ const TYPE_LABELS: Record<string, string> = {
   objection_handler: "Objection",
 };
 
-const NICHE_OPTIONS = [
-  { value: "agency_owners", label: "Agency owners" },
-  { value: "business_coaches", label: "Business coaches" },
-  { value: "fitness_health_coaches", label: "Fitness/health coaches" },
-  { value: "course_creators", label: "Course creators" },
-  { value: "saas_founders", label: "SaaS founders" },
-  { value: "consultants", label: "Consultants" },
-  { value: "ecommerce", label: "Ecommerce" },
-];
-
 export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
   const [isChunking, setIsChunking] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [sourceName, setSourceName] = useState("");
-  const [niche, setNiche] = useState("");
-  const [subNiche, setSubNiche] = useState("");
-  const [offerType, setOfferType] = useState("");
   const [chunks, setChunks] = useState<ChunkedSection[]>([]);
 
   const handleChunk = async () => {
     if (!transcript.trim()) {
       toast.error("Please enter a transcript");
-      return;
-    }
-    
-    if (!niche) {
-      toast.error("Please select a niche");
       return;
     }
 
@@ -81,9 +59,6 @@ export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
         body: {
           transcript,
           source_name: sourceName,
-          niche,
-          sub_niche: subNiche,
-          offer_type: offerType,
         },
       });
 
@@ -141,9 +116,6 @@ export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
             source: chunk.source || null,
             quality_notes: chunk.quality_notes || null,
             embedding,
-            niche: chunk.niche || null,
-            sub_niche: chunk.sub_niche || null,
-            offer_type: chunk.offer_type || null,
             topic_tags: chunk.topic_tags?.length > 0 ? chunk.topic_tags : null,
           });
           insertError = error;
@@ -153,9 +125,6 @@ export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
             source: chunk.source || null,
             quality_notes: chunk.quality_notes || null,
             embedding,
-            niche: chunk.niche || null,
-            sub_niche: chunk.sub_niche || null,
-            offer_type: chunk.offer_type || null,
             topic_tags: chunk.topic_tags?.length > 0 ? chunk.topic_tags : null,
           });
           insertError = error;
@@ -165,8 +134,6 @@ export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
             source: chunk.source || null,
             quality_notes: chunk.quality_notes || null,
             embedding,
-            niche: chunk.niche || null,
-            offer_type: chunk.offer_type || null,
           });
           insertError = error;
         } else if (chunk.type === "proof") {
@@ -175,7 +142,6 @@ export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
             source: chunk.source || null,
             quality_notes: chunk.quality_notes || null,
             embedding,
-            niche: chunk.niche || null,
           });
           insertError = error;
         } else if (chunk.type === "objection_handler") {
@@ -184,8 +150,6 @@ export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
             source: chunk.source || null,
             quality_notes: chunk.quality_notes || null,
             embedding,
-            niche: chunk.niche || null,
-            offer_type: chunk.offer_type || null,
           });
           insertError = error;
         } else {
@@ -206,6 +170,7 @@ export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
       toast.success(`Imported ${successCount} chunks successfully`);
       setChunks([]);
       setTranscript("");
+      setSourceName("");
       onSuccess();
     }
     if (errorCount > 0) {
@@ -223,7 +188,8 @@ export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
         <CardHeader>
           <CardTitle>Bulk Import via AI</CardTitle>
           <CardDescription>
-            Paste a full transcript and let AI automatically chunk it into sections
+            Paste a full transcript and let AI automatically chunk it into sections. 
+            Semantic search will match content by meaning, not categories.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -240,51 +206,18 @@ export default function BulkImportForm({ onSuccess }: BulkImportFormProps) {
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-            <div className="space-y-2">
-              <Label>Source Name</Label>
-              <Input
-                placeholder="e.g., Alex Hormozi - Video Title"
-                value={sourceName}
-                onChange={(e) => setSourceName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Niche *</Label>
-              <Select value={niche} onValueChange={setNiche}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select niche..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {NICHE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Sub-Niche</Label>
-              <Input
-                placeholder="e.g., lead generation"
-                value={subNiche}
-                onChange={(e) => setSubNiche(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Offer Type</Label>
-              <Input
-                placeholder="e.g., high_ticket"
-                value={offerType}
-                onChange={(e) => setOfferType(e.target.value)}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label>Source Name</Label>
+            <Input
+              placeholder="e.g., Alex Hormozi - Video Title"
+              value={sourceName}
+              onChange={(e) => setSourceName(e.target.value)}
+            />
           </div>
 
           <Button
             onClick={handleChunk}
-            disabled={isChunking || !transcript.trim() || !niche}
+            disabled={isChunking || !transcript.trim()}
             className="w-full"
           >
             {isChunking ? (

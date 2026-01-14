@@ -16,7 +16,7 @@ serve(async (req) => {
       throw new Error("ANTHROPIC_API_KEY is not configured");
     }
 
-    const { transcript, source_name, niche, sub_niche, offer_type } = await req.json();
+    const { transcript, source_name } = await req.json();
     
     if (!transcript || typeof transcript !== "string") {
       throw new Error("Transcript is required");
@@ -29,11 +29,7 @@ serve(async (req) => {
 TRANSCRIPT:
 ${transcript}
 
-SOURCE INFO:
-- Source Name: ${source_name || "Unknown"}
-- Niche: ${niche || "Not specified"}
-- Sub Niche: ${sub_niche || "Not specified"}
-- Offer Type: ${offer_type || "Not specified"}
+SOURCE: ${source_name || "Unknown"}
 
 Break this transcript into sections. Return JSON only:
 
@@ -42,10 +38,7 @@ Break this transcript into sections. Return JSON only:
     {
       "type": "hook | body | cta | proof | objection_handler",
       "content": "exact text from transcript (100-400 words per chunk)",
-      "topic_tags": [],
-      "niche": "${niche || ""}",
-      "sub_niche": "${sub_niche || ""}",
-      "offer_type": "${offer_type || ""}",
+      "topic_tags": ["relevant", "topic", "keywords"],
       "source": "${source_name || ""}",
       "quality_notes": "what makes this section effective"
     }
@@ -66,6 +59,7 @@ RULES:
 - A transcript can have multiple body sections
 - Only tag as "proof" if it contains specific results/numbers
 - Always include the exact type value from the list above
+- topic_tags should be 2-5 keywords describing the content's topic
 
 Return ONLY valid JSON, no other text.`;
 
@@ -77,7 +71,7 @@ Return ONLY valid JSON, no other text.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-5-20250514",
+        model: "claude-sonnet-4-20250514",
         max_tokens: 8000,
         messages: [
           { role: "user", content: prompt }
