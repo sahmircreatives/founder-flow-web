@@ -98,7 +98,6 @@ export interface BusinessContext {
 export interface VoiceData {
   tweet_examples: string;
   tone_goals: string[];
-  do_phrases: string[];
   dont_phrases: string[];
 }
 

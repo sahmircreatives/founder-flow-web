@@ -22,7 +22,7 @@ const VoiceDataStep = ({ data, onUpdate }: VoiceDataStepProps) => {
     }
   };
 
-  const handleArrayInput = (field: 'do_phrases' | 'dont_phrases', value: string) => {
+  const handleArrayInput = (field: 'dont_phrases', value: string) => {
     const items = value.split('\n').filter(Boolean);
     onUpdate(field, items);
   };
@@ -74,20 +74,6 @@ const VoiceDataStep = ({ data, onUpdate }: VoiceDataStepProps) => {
           </div>
         </div>
 
-        {/* Do Phrases */}
-        <div>
-          <Label htmlFor="doPhrases" className="text-sm font-medium text-foreground mb-2 block">
-            "Do" Phrases — Words/phrases you want the AI to use
-          </Label>
-          <p className="text-xs text-muted-foreground mb-2">One per line</p>
-          <Textarea
-            id="doPhrases"
-            placeholder="Here's the thing...&#10;Let me show you...&#10;The truth is...&#10;What most people miss..."
-            value={data.do_phrases.join('\n')}
-            onChange={(e) => handleArrayInput('do_phrases', e.target.value)}
-            className="bg-secondary/50 border-border text-foreground placeholder:text-muted-foreground min-h-[100px] font-mono text-sm"
-          />
-        </div>
 
         {/* Don't Phrases */}
         <div>
