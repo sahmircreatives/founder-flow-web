@@ -470,7 +470,46 @@ Return ONLY valid JSON.`
   }
 }
 
-// Validate script against hard rules - now includes tweet-proof checks
+// Detect fabricated claims - stats and case studies not backed by research
+interface FabricatedClaimIssue {
+  type: 'unverified_statistic' | 'potential_fabricated_example';
+  content: string;
+}
+
+function detectFabricatedClaims(script: string, alignedClaims: SupportedClaim[]): FabricatedClaimIssue[] {
+  const issues: FabricatedClaimIssue[] = [];
+  
+  // Find all stats/numbers in script
+  const statsInScript = script.match(/\d+%|\$[\d,]+|\d+\s+(percent|million|thousand|people|companies|founders)/gi) || [];
+  
+  // Find all case study patterns
+  const caseStudyPatterns = script.match(/(One founder|A client|One of our clients|I talked to a founder|Let me tell you about|Take Sarah|Take Mike|Meet \w+|I know a founder|I worked with a|There's this founder|I met a)/gi) || [];
+  
+  // Check each stat against research claims
+  statsInScript.forEach(stat => {
+    const isFromResearch = alignedClaims.some(claim => 
+      claim.claim.toLowerCase().includes(stat.toLowerCase())
+    );
+    if (!isFromResearch) {
+      issues.push({
+        type: 'unverified_statistic',
+        content: stat
+      });
+    }
+  });
+  
+  // Flag all case studies as potentially fabricated
+  caseStudyPatterns.forEach(pattern => {
+    issues.push({
+      type: 'potential_fabricated_example',
+      content: pattern
+    });
+  });
+  
+  return issues;
+}
+
+// Validate script against hard rules - now includes tweet-proof checks and fabricated claims
 function validateScript(
   script: string, 
   alignedClaims: SupportedClaim[], 
@@ -522,6 +561,19 @@ function validateScript(
     if (pattern.test(script)) {
       issues.push("Possible direct tweet quote detected - paraphrase instead");
     }
+  }
+
+  // Rule 5: Check for fabricated claims
+  const fabricatedClaims = detectFabricatedClaims(script, alignedClaims);
+  const unverifiedStats = fabricatedClaims.filter(c => c.type === 'unverified_statistic');
+  const fabricatedExamples = fabricatedClaims.filter(c => c.type === 'potential_fabricated_example');
+  
+  if (unverifiedStats.length > 0) {
+    issues.push(`UNVERIFIED_STATS: ${unverifiedStats.map(s => s.content).join(', ')}`);
+  }
+  
+  if (fabricatedExamples.length > 0) {
+    issues.push(`FABRICATED_EXAMPLES: ${fabricatedExamples.map(e => e.content).join(', ')}`);
   }
 
   return {
@@ -1114,8 +1166,23 @@ INSTRUCTIONS:
 2. If there are too many tweet-proof items (>2), remove some and replace with research claims or original examples
 3. If sections lack non-tweet value points, add mechanisms/steps/pitfalls/examples
 4. Remove any unsourced factual claims (statistics, "studies show", etc.)
-5. Ensure every research claim has a [CITE: url] tag
-6. Preserve the voice and flow of the original
+5. Preserve the voice and flow of the original
+
+FABRICATED CONTENT RULES:
+
+UNVERIFIED STATISTICS: If a statistic isn't in the research claims list, either:
+- Replace with a similar stat FROM the research claims
+- Remove the stat and rewrite the sentence without it
+- Change to vague language: "most founders" instead of "78% of founders"
+
+CASE STUDIES/EXAMPLES: For any "I talked to a founder" or "One client" stories:
+- If NOT from research: rewrite as clearly hypothetical: "Let's say you're a founder who..." instead of "I talked to a founder who..."
+- Use "Imagine you..." instead of "One of our clients..."
+- Remove specific fake names (Sarah, Mike, etc.)
+- Remove specific fake dollar amounts from examples
+- NEVER invent specific names, dollar amounts, or outcomes for examples
+
+NO CITATIONS IN OUTPUT: The final script should read clean with no [CITE] tags or source references. Track sources internally but don't include them in the script text.
 
 Return a JSON object:
 {
