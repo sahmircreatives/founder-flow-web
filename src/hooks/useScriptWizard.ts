@@ -103,7 +103,6 @@ const initialBusinessContext: BusinessContext = {
 const initialVoiceData: VoiceData = {
   tweet_examples: '',
   tone_goals: [],
-  do_phrases: [],
   dont_phrases: [],
 };
 

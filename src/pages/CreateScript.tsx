@@ -44,7 +44,6 @@ const CreateScript = () => {
           tweets: voiceData.tweet_examples,
           constraints: {
             tone_goals: voiceData.tone_goals,
-            do_phrases: voiceData.do_phrases,
             dont_phrases: voiceData.dont_phrases,
           },
         },

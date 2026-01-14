@@ -29,7 +29,7 @@ const ReviewStep = ({ businessContext, voiceData, onEditStep }: ReviewStepProps)
       title: 'Voice & Tone',
       items: [
         { label: 'Tone Goals', value: voiceData?.tone_goals?.join(', ') || 'Not set' },
-        { label: 'Do Phrases', value: (voiceData?.do_phrases?.length || 0) + ' phrases' },
+        { label: "Don't Phrases", value: (voiceData?.dont_phrases?.length || 0) + ' phrases' },
         { label: 'Content Examples', value: voiceData?.tweet_examples ? 'Provided' : 'Not provided' },
       ],
     },
