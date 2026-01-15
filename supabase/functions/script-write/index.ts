@@ -137,9 +137,21 @@ ${rag_examples_section ? `=== REFERENCE EXAMPLES (structure/flow only) ===\n${ra
 5. GOOD: "Two founders with the same revenue—one pays $180k, the other pays $50k."
 6. Each line should flow naturally to the next
 7. Read it out loud - if it sounds punchy like social media, rewrite it
-8. DO NOT fabricate statistics or case studies not in the research claims
-9. Use hypothetical framing ("Imagine you..." or "Let's say...") for examples
-10. CREDIBILITY SECTION must use exactly: "I'm ${creator.name || '[CREATOR NAME]'}. ${creator.credibility_claim || '[CREDIBILITY CLAIM]'}" - Do not invent credentials.
+8. CREDIBILITY SECTION must use exactly: "I'm ${creator.name || '[CREATOR NAME]'}. ${creator.credibility_claim || '[CREDIBILITY CLAIM]'}" - Do not invent credentials.
+
+=== FABRICATION PREVENTION (CRITICAL) ===
+NEVER FABRICATE:
+- Specific dollar amounts in examples (e.g., "$220,000 refund") - ONLY use amounts from research claims
+- Specific percentages not in research (e.g., "70% of startups") - ONLY use stats from research claims  
+- Emotional story details (e.g., "called me crying", "couldn't believe it")
+- Specific client/founder names (Sarah, Mike, John, etc.)
+- "Our first client", "One of our clients" stories with specific outcomes
+
+INSTEAD USE:
+- Hypothetical framing: "Imagine you're a founder who..." or "Let's say you..."
+- General statements: "Most founders", "Many startups", "A lot of companies"
+- Research-backed claims ONLY: Use the exact claims from the RESEARCH CLAIMS section above
+- If you need an example, make it clearly hypothetical with no specific amounts
 
 === OUTPUT FORMAT ===
 Write the complete script with section labels only (no timestamps, no markdown).

@@ -502,21 +502,45 @@ interface FabricatedClaimIssue {
   content: string;
 }
 
+// Convert word numbers to digits for comparison
+function normalizeNumber(text: string): string {
+  const wordToNum: Record<string, string> = {
+    'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+    'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
+    'ten': '10', 'eleven': '11', 'twelve': '12', 'thirteen': '13',
+    'fourteen': '14', 'fifteen': '15', 'sixteen': '16', 'seventeen': '17',
+    'eighteen': '18', 'nineteen': '19', 'twenty': '20', 'thirty': '30',
+    'forty': '40', 'fifty': '50', 'sixty': '60', 'seventy': '70',
+    'eighty': '80', 'ninety': '90', 'hundred': '100'
+  };
+  
+  let result = text.toLowerCase();
+  for (const [word, num] of Object.entries(wordToNum)) {
+    result = result.replace(new RegExp(`\\b${word}\\b`, 'g'), num);
+  }
+  return result;
+}
+
 function detectFabricatedClaims(script: string, alignedClaims: SupportedClaim[]): FabricatedClaimIssue[] {
   const issues: FabricatedClaimIssue[] = [];
+  const normalizedScript = normalizeNumber(script);
   
-  // Find all stats/numbers in script
-  const statsInScript = script.match(/\d+%|\$[\d,]+|\d+\s+(percent|million|thousand|people|companies|founders)/gi) || [];
+  // Find all stats/numbers in script (both digit and word forms)
+  const digitStats = normalizedScript.match(/\d+%|\$[\d,]+|\d+\s+(percent|million|thousand|billion|people|companies|founders|startups|businesses)/gi) || [];
+  const wordStats = script.match(/(twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)\s+(percent|thousand|million)/gi) || [];
+  const allStats = [...digitStats, ...wordStats];
   
-  // Find all case study patterns
-  const caseStudyPatterns = script.match(/(One founder|A client|One of our clients|I talked to a founder|Let me tell you about|Take Sarah|Take Mike|Meet \w+|I know a founder|I worked with a|There's this founder|I met a)/gi) || [];
+  // Find specific dollar amounts (both $X and "X dollar" forms)
+  const dollarPatterns = script.match(/\$[\d,]+(\s*(thousand|million|billion|k|m|b))?|(\d+|one|two|three|four|five|six|seven|eight|nine|ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred)\s*(thousand|million|hundred|k|m)?\s*dollar/gi) || [];
+  
+  // Combine claims text for searching
+  const claimsText = normalizeNumber(alignedClaims.map(c => c.claim).join(' '));
   
   // Check each stat against research claims
-  statsInScript.forEach(stat => {
-    const isFromResearch = alignedClaims.some(claim => 
-      claim.claim.toLowerCase().includes(stat.toLowerCase())
-    );
-    if (!isFromResearch) {
+  allStats.forEach(stat => {
+    const normalizedStat = normalizeNumber(stat).replace(/[^0-9]/g, '');
+    const isFromResearch = normalizedStat.length > 0 && claimsText.includes(normalizedStat);
+    if (!isFromResearch && normalizedStat.length >= 2) {
       issues.push({
         type: 'unverified_statistic',
         content: stat
@@ -524,12 +548,37 @@ function detectFabricatedClaims(script: string, alignedClaims: SupportedClaim[])
     }
   });
   
-  // Flag all case studies as potentially fabricated
+  // Find all case study patterns (expanded list)
+  const caseStudyPatterns = script.match(
+    /(Our first client|One founder|A client|One of our clients|I talked to a founder|Let me tell you about|Take Sarah|Take Mike|Meet \w+|I know a founder|I worked with a|There's this founder|I met a|He called me|She called me|called me crying|called me in tears|sent me a message|reached out to me|texted me saying|emailed me|One of my clients|A founder I work with|A startup founder|This one founder|I remember a founder|I had a client|There was this client)/gi
+  ) || [];
+  
+  // Flag all case studies with specific names, amounts, or emotional details
   caseStudyPatterns.forEach(pattern => {
     issues.push({
       type: 'potential_fabricated_example',
       content: pattern
     });
+  });
+  
+  // Extra check: Dollar amounts in what look like examples/stories
+  dollarPatterns.forEach(amount => {
+    // Check if it appears in a story context
+    const context = script.substring(
+      Math.max(0, script.indexOf(amount) - 100),
+      Math.min(script.length, script.indexOf(amount) + 100)
+    );
+    const storyIndicators = /received|got|refund|saved|made|earned|client|founder|he|she|they/i;
+    if (storyIndicators.test(context)) {
+      const normalizedAmount = normalizeNumber(amount).replace(/[^0-9]/g, '');
+      const isFromResearch = normalizedAmount.length > 0 && claimsText.includes(normalizedAmount);
+      if (!isFromResearch) {
+        issues.push({
+          type: 'potential_fabricated_example',
+          content: `Specific amount in story: ${amount}`
+        });
+      }
+    }
   });
   
   return issues;
