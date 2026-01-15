@@ -409,6 +409,19 @@ async function runToneDistillationStage(tweets: string): Promise<ToneSummary> {
             role: "user",
             content: `You are a voice/tone analyst. Extract PURE STYLE PATTERNS from these tweets. 
 
+STEP 1: FILTER TWEETS
+Before analyzing, SKIP any tweet that:
+- Is a retweet, quote tweet, or starts with "RT @"
+- Is under 100 characters
+- Is primarily a link share (tweet exists just to promote a URL)
+- Is promotional content (plugging products, companies, events, asking for follows)
+- Is sponsored/ad content (e.g., mentioning brand names with enthusiasm)
+- Is just @mentioning or praising someone else
+
+Only analyze tweets that are ORIGINAL THOUGHTS showing the person's actual voice and thinking.
+
+STEP 2: EXTRACT STYLE (from filtered tweets only)
+
 CRITICAL: This is STYLE ONLY. Do NOT extract:
 - Facts, statistics, or claims
 - Proof points or evidence
