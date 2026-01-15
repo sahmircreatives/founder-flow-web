@@ -3,6 +3,15 @@ project_id = "qhibslffdbctewozlgjg"
 [functions.generate-script-v3]
 verify_jwt = false
 
+[functions.script-structure]
+verify_jwt = false
+
+[functions.script-write]
+verify_jwt = false
+
+[functions.script-polish]
+verify_jwt = false
+
 [functions.grok-fill-business]
 verify_jwt = false
 
