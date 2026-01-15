@@ -11,7 +11,6 @@ interface ToneSummary {
   writing_patterns: string[];
   dont_phrases: string[];
   cadence_notes: string[];
-  example_lines: string[];
 }
 
 interface SupportedClaim {
@@ -59,7 +58,6 @@ serve(async (req) => {
       writing_patterns: [],
       dont_phrases: [],
       cadence_notes: [],
-      example_lines: []
     };
 
     const prompt = `You are a script editor doing a final polish pass. Review and improve this script.
@@ -73,9 +71,6 @@ ${toneSummary.one_sentence_voice}
 Tone rules:
 ${toneSummary.tone_rules.map((r: string, i: number) => `${i + 1}. ${r}`).join('\n')}
 
-Example lines (match this rhythm):
-${toneSummary.example_lines.map((l: string) => `"${l}"`).join('\n')}
-
 === POLISH CHECKLIST ===
 
 1. FLOW CHECK:
@@ -84,9 +79,10 @@ ${toneSummary.example_lines.map((l: string) => `"${l}"`).join('\n')}
    - Ensure each paragraph flows smoothly
 
 2. VOICE CHECK:
-   - Remove any slang not in the example lines (Bruh, Dude, Yo, Bro, Man, Like)
+   - Remove any slang (Bruh, Dude, Yo, Bro, Man, Like)
    - Ensure the voice matches the tone rules throughout
    - Remove any AI-sounding phrases ("Let's dive in", "Here's the thing", "At the end of the day")
+   - Remove lazy re-hooks: "Read that again", "Let that sink in", "Think about that", "This is important"
 
 3. SPOKEN DELIVERY CHECK:
    - Read each sentence - does it sound natural spoken aloud?

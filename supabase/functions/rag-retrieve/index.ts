@@ -17,7 +17,6 @@ interface RetrievedExample {
 interface RAGResults {
   hooks: RetrievedExample[];
   body_sections: RetrievedExample[];
-  cta_sections: RetrievedExample[];
   proof_sections: RetrievedExample[];
   objection_handlers: RetrievedExample[];
 }
@@ -103,23 +102,21 @@ serve(async (req) => {
 
     console.log("RAG Retrieve inputs:", { video_title, niche, offer_type, profession });
 
-    // Generate embeddings for different search queries in parallel
-    const [hookEmbedding, bodyEmbedding, ctaEmbedding, proofEmbedding, objectionEmbedding] = await Promise.all([
+    // Generate embeddings for different search queries in parallel (no CTA - comes from business context)
+    const [hookEmbedding, bodyEmbedding, proofEmbedding, objectionEmbedding] = await Promise.all([
       generateEmbedding(`${video_title} ${niche}`, OPENAI_API_KEY),
       generateEmbedding(`${video_title} ${primary_problem} ${profession}`, OPENAI_API_KEY),
-      generateEmbedding(`${offer_type} call to action`, OPENAI_API_KEY),
       generateEmbedding(`${niche} ${sub_niche} results case study`, OPENAI_API_KEY),
       generateEmbedding(first_objection || `${offer_type} objection doubt`, OPENAI_API_KEY),
     ]);
 
     console.log("Embeddings generated, searching collections...");
 
-    // Search each collection in parallel
+    // Search each collection in parallel (no CTA collection - CTA comes only from business context)
     // IMPORTANT: Niche filtering happens BEFORE vector similarity in the database function
-    const [hooks, bodySections, ctaSections, proofSections, objectionHandlers] = await Promise.all([
+    const [hooks, bodySections, proofSections, objectionHandlers] = await Promise.all([
       searchCollection(supabase, "rag_hooks", hookEmbedding, 2, niche, offer_type),
       searchCollection(supabase, "rag_body_sections", bodyEmbedding, 2, niche, null),
-      searchCollection(supabase, "rag_cta_sections", ctaEmbedding, 1, niche, offer_type),
       searchCollection(supabase, "rag_proof_sections", proofEmbedding, 1, niche, null),
       searchCollection(supabase, "rag_objection_handlers", objectionEmbedding, 1, niche, offer_type),
     ]);
@@ -127,7 +124,6 @@ serve(async (req) => {
     const results: RAGResults = {
       hooks,
       body_sections: bodySections,
-      cta_sections: ctaSections,
       proof_sections: proofSections,
       objection_handlers: objectionHandlers,
     };
@@ -135,7 +131,6 @@ serve(async (req) => {
     console.log("RAG results:", {
       hooks: hooks.length,
       body_sections: bodySections.length,
-      cta_sections: ctaSections.length,
       proof_sections: proofSections.length,
       objection_handlers: objectionHandlers.length,
     });

@@ -34,7 +34,6 @@ interface ToneSummary {
   writing_patterns: string[];  // Style patterns like "Opens with bold claims", NOT exact phrases
   dont_phrases: string[];
   cadence_notes: string[];
-  example_lines: string[];
 }
 
 interface RetentionElements {
@@ -72,12 +71,25 @@ interface RAGExample {
 interface RAGResults {
   hooks: RAGExample[];
   body_sections: RAGExample[];
-  cta_sections: RAGExample[];
   proof_sections: RAGExample[];
   objection_handlers: RAGExample[];
 }
 
-// Build RAG examples section for the prompt - updated format
+// Sanitize RAG content before injection - strip specific names/amounts
+function sanitizeRAGContent(content: string): string {
+  // Replace company/product names with placeholder
+  let sanitized = content.replace(/\b(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+(?:Inc|LLC|Corp|Company|Software|Solutions|Agency|Consulting)\b/g, '[COMPANY]');
+  
+  // Replace dollar amounts
+  sanitized = sanitized.replace(/\$[\d,]+(?:\.\d{2})?(?:\s*(?:million|billion|k|K|M|B))?/g, '[AMOUNT]');
+  
+  // Replace specific percentages
+  sanitized = sanitized.replace(/\b\d+(?:\.\d+)?%/g, '[X%]');
+  
+  return sanitized;
+}
+
+// Build RAG examples section for the prompt - updated format (no CTA)
 function buildExamplesSection(retrieved: RAGResults): string {
   let section = '';
   
@@ -85,7 +97,8 @@ function buildExamplesSection(retrieved: RAGResults): string {
   if (retrieved.hooks?.length > 0) {
     section += `HOOK EXAMPLES:\n`;
     retrieved.hooks.slice(0, 2).forEach((hook, i) => {
-      section += `---\nExample ${i + 1} (similarity: ${hook.similarity?.toFixed(2) || 'N/A'}):\n"${hook.content}"\nSource: ${hook.source || 'Unknown'}\n---\n`;
+      const sanitizedContent = sanitizeRAGContent(hook.content);
+      section += `---\nExample ${i + 1} (similarity: ${hook.similarity?.toFixed(2) || 'N/A'}):\n"${sanitizedContent}"\n---\n`;
     });
     section += `↳ Pattern from: Opening structure, curiosity loop setup, pacing\n\n`;
   }
@@ -94,26 +107,23 @@ function buildExamplesSection(retrieved: RAGResults): string {
   if (retrieved.body_sections?.length > 0) {
     section += `BODY/VALUE EXAMPLES:\n`;
     retrieved.body_sections.slice(0, 2).forEach((body, i) => {
-      section += `---\nExample ${i + 1} (similarity: ${body.similarity?.toFixed(2) || 'N/A'}):\n"${body.content}"\nSource: ${body.source || 'Unknown'}\n---\n`;
+      const sanitizedContent = sanitizeRAGContent(body.content);
+      section += `---\nExample ${i + 1} (similarity: ${body.similarity?.toFixed(2) || 'N/A'}):\n"${sanitizedContent}"\n---\n`;
     });
     section += `↳ Pattern from: How points are explained, transitions, depth of value\n\n`;
   }
   
-  // CTA example (show 1)
-  if (retrieved.cta_sections?.length > 0) {
-    section += `CTA EXAMPLE:\n---\n"${retrieved.cta_sections[0].content}"\nSource: ${retrieved.cta_sections[0].source || 'Unknown'}\n---\n`;
-    section += `↳ Pattern from: Transition into offer, tone, how it feels native\n\n`;
-  }
-  
-  // Proof example (show 1)
+  // Proof example (show 1) - NO CTA SECTION
   if (retrieved.proof_sections?.length > 0) {
-    section += `PROOF EXAMPLE:\n---\n"${retrieved.proof_sections[0].content}"\nSource: ${retrieved.proof_sections[0].source || 'Unknown'}\n---\n`;
+    const sanitizedContent = sanitizeRAGContent(retrieved.proof_sections[0].content);
+    section += `PROOF EXAMPLE:\n---\n"${sanitizedContent}"\n---\n`;
     section += `↳ Pattern from: How results are presented, specificity, weaving into value\n\n`;
   }
   
   // Objection handler example (show 1)
   if (retrieved.objection_handlers?.length > 0) {
-    section += `OBJECTION HANDLER EXAMPLE:\n---\n"${retrieved.objection_handlers[0].content}"\nSource: ${retrieved.objection_handlers[0].source || 'Unknown'}\n---\n`;
+    const sanitizedContent = sanitizeRAGContent(retrieved.objection_handlers[0].content);
+    section += `OBJECTION HANDLER EXAMPLE:\n---\n"${sanitizedContent}"\n---\n`;
     section += `↳ Pattern from: How objection is acknowledged and reframed naturally\n\n`;
   }
   
@@ -385,7 +395,6 @@ async function runToneDistillationStage(tweets: string): Promise<ToneSummary> {
     writing_patterns: [],
     dont_phrases: [],
     cadence_notes: [],
-    example_lines: []
   };
 
   if (!ANTHROPIC_API_KEY || !tweets || tweets.trim().length === 0) {
@@ -440,20 +449,19 @@ Return a JSON object with these fields (respect hard caps):
   "tone_rules": ["max 10 rules about HOW they write - e.g., 'Uses short punchy sentences', 'Starts with questions'"],
   "writing_patterns": ["max 10 ABSTRACT style patterns - e.g., 'Opens with bold contrarian claims', 'Uses second-person you heavily', 'Ends sentences with incomplete thoughts', 'Mixes casual slang with business terms' - NOT specific phrases to copy"],
   "dont_phrases": ["max 10 phrases/words they avoid or wouldn't use"],
-  "cadence_notes": ["Notes about rhythm, paragraph length, sentence structure"],
-  "example_lines": ["max 6 lines demonstrating rhythm/cadence ONLY - zero facts, zero specifics, zero proof"]
+  "cadence_notes": ["Notes about rhythm, paragraph length, sentence structure"]
 }
 
 IMPORTANT: 
 - writing_patterns should describe PATTERNS, not exact words
 - BAD: "Uses 'Here's the thing'" (this is copying)
 - GOOD: "Opens points with a setup phrase before the insight" (this is a pattern)
+- DO NOT include example_lines - they cause content bleed
 
 HARD CAPS: 
 - tone_rules: max 10 items
 - writing_patterns: max 10 items  
 - dont_phrases: max 10 items
-- example_lines: max 6 items
 
 Return ONLY valid JSON.`
           }
@@ -478,7 +486,6 @@ Return ONLY valid JSON.`
         writing_patterns: (result.writing_patterns || []).slice(0, 10),
         dont_phrases: (result.dont_phrases || []).slice(0, 10),
         cadence_notes: result.cadence_notes || [],
-        example_lines: (result.example_lines || []).slice(0, 6),
       };
     }
 
@@ -528,11 +535,13 @@ function detectFabricatedClaims(script: string, alignedClaims: SupportedClaim[])
   return issues;
 }
 
-// Validate script against hard rules - now includes tweet-proof checks and fabricated claims
+// Validate script against hard rules - automatic bias corrector triggers
 function validateScript(
   script: string, 
   alignedClaims: SupportedClaim[], 
-  contextUseLog: ContextUseLog
+  contextUseLog: ContextUseLog,
+  creatorName?: string,
+  credibilityClaim?: string
 ): ValidationResult {
   const issues: string[] = [];
 
@@ -582,17 +591,33 @@ function validateScript(
     }
   }
 
-  // Rule 5: Check for fabricated claims
+  // Rule 5: Check for fabricated claims (AUTO TRIGGER FOR BIAS CORRECTOR)
   const fabricatedClaims = detectFabricatedClaims(script, alignedClaims);
   const unverifiedStats = fabricatedClaims.filter(c => c.type === 'unverified_statistic');
   const fabricatedExamples = fabricatedClaims.filter(c => c.type === 'potential_fabricated_example');
   
+  // AUTO TRIGGER: Stats not in research claims
   if (unverifiedStats.length > 0) {
     issues.push(`UNVERIFIED_STATS: ${unverifiedStats.map(s => s.content).join(', ')}`);
   }
   
+  // AUTO TRIGGER: Case study uses specific names/dollars not from research
   if (fabricatedExamples.length > 0) {
     issues.push(`FABRICATED_EXAMPLES: ${fabricatedExamples.map(e => e.content).join(', ')}`);
+  }
+
+  // Rule 6: AUTO TRIGGER - Credibility doesn't match creator.name
+  if (creatorName && creatorName.trim() !== '') {
+    const scriptLower = script.toLowerCase();
+    const creatorNameLower = creatorName.toLowerCase();
+    
+    // Check if the credibility section mentions the creator's name
+    const credibilitySection = script.match(/SETUP_CREDIBILITY[\s\S]*?(?=VALUE_1|$)/i)?.[0] || 
+                              script.match(/SETUP[\s\S]*?(?=VALUE|$)/i)?.[0] || '';
+    
+    if (credibilitySection && !credibilitySection.toLowerCase().includes(creatorNameLower)) {
+      issues.push(`CREDIBILITY_MISMATCH: Script credibility section doesn't mention "${creatorName}"`);
+    }
   }
 
   return {
@@ -807,10 +832,7 @@ ${toneSummary.writing_patterns.map((p, i) => `${i + 1}. ${p}`).join('\n') || 'No
 
 AVOID: ${toneSummary.dont_phrases.join(', ') || 'None specified'}
 
-EXAMPLE LINES (rhythm/pacing reference ONLY - do NOT copy vocabulary):
-${toneSummary.example_lines.map(l => `"${l}"`).join('\n')}
-
-CRITICAL: No casual slang (Bruh, Dude, Yo, Bro, Man, Like) unless in examples above.`;
+CRITICAL: No casual slang (Bruh, Dude, Yo, Bro, Man, Like).`;
 
   const prompt = `You are a YouTube scriptwriter. Write a complete script following this exact structure.
 
@@ -911,9 +933,6 @@ ${toneSummary.one_sentence_voice}
 Tone rules:
 ${toneSummary.tone_rules.map((r, i) => `${i + 1}. ${r}`).join('\n')}
 
-Example lines (match this rhythm):
-${toneSummary.example_lines.map(l => `"${l}"`).join('\n')}
-
 === POLISH CHECKLIST ===
 
 1. FLOW CHECK:
@@ -922,9 +941,10 @@ ${toneSummary.example_lines.map(l => `"${l}"`).join('\n')}
    - Ensure each paragraph flows smoothly
 
 2. VOICE CHECK:
-   - Remove any slang not in the example lines (Bruh, Dude, Yo, Bro, Man, Like)
+   - Remove any slang (Bruh, Dude, Yo, Bro, Man, Like)
    - Ensure the voice matches the tone rules throughout
    - Remove any AI-sounding phrases ("Let's dive in", "Here's the thing", "At the end of the day")
+   - Remove lazy re-hooks: "Read that again", "Let that sink in", "Think about that", "This is important"
 
 3. SPOKEN DELIVERY CHECK:
    - Read each sentence - does it sound natural spoken aloud?
@@ -1108,22 +1128,28 @@ async function runScriptStage(
     contextUseLog.rag_examples_used = {
       hooks: ragResults.hooks?.slice(0, 2).map(h => h.source || 'Unknown') || [],
       body: ragResults.body_sections?.slice(0, 2).map(b => b.source || 'Unknown') || [],
-      cta: ragResults.cta_sections?.slice(0, 1).map(c => c.source || 'Unknown') || [],
+      cta: [], // CTA now comes from business context only
       proof: ragResults.proof_sections?.slice(0, 1).map(p => p.source || 'Unknown') || [],
       objection: ragResults.objection_handlers?.slice(0, 1).map(o => o.source || 'Unknown') || []
     };
   }
 
-  // Validate the script
-  let validation = validateScript(script, alignedClaims, contextUseLog);
+  // Get creator info for validation (reuse bc from above)
+  const creator = bc.creator || {};
+  const creatorName = creator.name || '';
+  const credibilityClaim = creator.credibility_claim || '';
 
-  // If validation fails, run bias corrector pass
+  // Validate the script with creator info for auto-trigger checks
+  let validation = validateScript(script, alignedClaims, contextUseLog, creatorName, credibilityClaim);
+
+  // If validation fails, run bias corrector pass automatically
   if (!validation.passed) {
-    console.log("Validation failed, running bias corrector...");
-    const corrected = await runBiasCorrectorPass(script, validation.issues, alignedClaims, contextUseLog, Deno.env.get("ANTHROPIC_API_KEY")!);
+    console.log("Validation failed, running bias corrector automatically...");
+    console.log("Issues:", validation.issues);
+    const corrected = await runBiasCorrectorPass(script, validation.issues, alignedClaims, contextUseLog, creatorName, credibilityClaim, Deno.env.get("ANTHROPIC_API_KEY")!);
     const correctedScript = corrected.script;
     const correctedContextUseLog = corrected.contextUseLog;
-    validation = validateScript(correctedScript, alignedClaims, correctedContextUseLog);
+    validation = validateScript(correctedScript, alignedClaims, correctedContextUseLog, creatorName, credibilityClaim);
     
     console.log("=== 3-STAGE SCRIPT GENERATION COMPLETE ===");
     return { script: correctedScript, validation, contextUseLog: correctedContextUseLog, retentionElements };
@@ -1133,12 +1159,14 @@ async function runScriptStage(
   return { script, validation, contextUseLog, retentionElements };
 }
 
-// Bias Corrector Pass - now returns updated context use log
+// Bias Corrector Pass - now includes creator info for credibility fixing
 async function runBiasCorrectorPass(
   script: string, 
   issues: string[], 
   alignedClaims: SupportedClaim[],
   contextUseLog: ContextUseLog,
+  creatorName: string,
+  credibilityClaim: string,
   apiKey: string
 ): Promise<{ script: string; contextUseLog: ContextUseLog }> {
   try {
@@ -1189,6 +1217,9 @@ CASE STUDIES/EXAMPLES: For any "I talked to a founder" or "One client" stories:
 - Remove specific fake names (Sarah, Mike, etc.)
 - Remove specific fake dollar amounts from examples
 - NEVER invent specific names, dollar amounts, or outcomes for examples
+
+CREDIBILITY FIX: If credibility doesn't match creator info, use exactly:
+"I'm ${creatorName}. ${credibilityClaim}"
 
 NO CITATIONS IN OUTPUT: The final script should read clean with no [CITE] tags or source references. Track sources internally but don't include them in the script text.
 
@@ -1267,7 +1298,7 @@ serve(async (req) => {
 
     // Stage 3.5: RAG Retrieval
     console.log("Stage 3.5: Running RAG retrieval...");
-    let ragResults: RAGResults = { hooks: [], body_sections: [], cta_sections: [], proof_sections: [], objection_handlers: [] };
+    let ragResults: RAGResults = { hooks: [], body_sections: [], proof_sections: [], objection_handlers: [] };
     let ragExamplesSection = "";
     
     try {
@@ -1293,7 +1324,7 @@ serve(async (req) => {
           const ragData = await ragResponse.json();
           ragResults = ragData.retrieved_examples || ragResults;
           ragExamplesSection = buildExamplesSection(ragResults);
-          console.log(`RAG retrieved: ${ragResults.hooks.length} hooks, ${ragResults.body_sections.length} body, ${ragResults.cta_sections.length} cta`);
+          console.log(`RAG retrieved: ${ragResults.hooks.length} hooks, ${ragResults.body_sections.length} body, ${ragResults.proof_sections.length} proof`);
         }
       }
     } catch (ragError) {
