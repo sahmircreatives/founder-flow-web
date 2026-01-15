@@ -659,8 +659,12 @@ ${toneSummary.writing_patterns.map((p, i) => `${i + 1}. ${p}`).join('\n') || 'No
 Avoid: ${toneSummary.dont_phrases.join(', ') || 'None specified'}
 Cadence: ${toneSummary.cadence_notes.join('; ') || 'Natural flow'}
 
-Example Lines (for rhythm/cadence reference only):
-${toneSummary.example_lines.map(l => `"${l}"`).join('\n')}`;
+Example Lines (for rhythm/pacing ONLY - do NOT copy vocabulary or add similar slang):
+${toneSummary.example_lines.map(l => `"${l}"`).join('\n')}
+
+CRITICAL VOICE RULE: Do NOT add casual interjections or slang that don't appear in the example lines above.
+No "Bruh", "Dude", "Yo", "Bro", "Man", "Like" unless they appear in the creator's actual examples.
+The voice should feel authentic to THEIR specific vocabulary, not generic internet casual.`;
 
   const scriptPrompt = `You are an expert YouTube scriptwriter creating a research-backed, high-retention script.
 
