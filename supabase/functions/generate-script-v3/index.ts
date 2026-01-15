@@ -750,6 +750,13 @@ HARD RULES
 4. Match the PACING and FLOW of examples, not the words
 5. VALUE BEFORE PITCH - deliver real insights before any selling
 6. RETENTION IS EVERYTHING - include re-hooks and open loops throughout
+7. WRITE FOR SPOKEN DELIVERY, NOT TWITTER:
+   - Avoid choppy one-word or two-word sentences in a row
+   - Combine related ideas into natural, flowing sentences
+   - Read it out loud - if it sounds like a LinkedIn post or tweet thread, rewrite it
+   - BAD (Twitter voice): "Two founders. Same revenue. Same team. One pays $180k. The other pays $50k."
+   - GOOD (spoken voice): "Two founders with the same revenue—one pays $180k, the other pays $50k."
+   - Sentences should flow conversationally, not punch like social media copy
 
 =============================================================
 YOUTUBE RETENTION MECHANICS (CRITICAL)
