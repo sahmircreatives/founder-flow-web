@@ -1244,7 +1244,7 @@ serve(async (req) => {
   try {
     const { topic, context_profile, tweets, constraints } = await req.json();
     
-    console.log("=== GENERATE SCRIPT V3 (5-STAGE WITH RAG) ===");
+    console.log("=== GENERATE SCRIPT V3 (PREP STAGES 1-3 + RAG) ===");
     console.log("Topic:", topic || context_profile?.video_title);
 
     // Stage 1: Research
@@ -1300,32 +1300,32 @@ serve(async (req) => {
       console.log("RAG retrieval failed (continuing without):", ragError);
     }
 
-    // Stage 4: Script Generation (with RAG examples)
-    console.log("Stage 4: Generating script...");
-    const { script, validation, contextUseLog, retentionElements } = await runScriptStage(
-      topic,
-      context_profile,
-      toneSummary,
-      tweets || "",
-      constraints || {},
-      researchPack,
-      alignedClaims,
-      ragExamplesSection,
-      ragResults
-    );
-    console.log("Script generated, validation passed:", validation.passed);
+    // Return prep data for the frontend to orchestrate script generation stages
+    console.log("=== PREP STAGES COMPLETE ===");
+    console.log("Returning data for frontend orchestration of script generation stages...");
+
+    const bc = context_profile?.business_context || {};
+    const targetLength = bc.target_length || context_profile?.target_length || 10;
 
     return new Response(JSON.stringify({
-      script,
+      // Prep data for script generation stages
+      prep_complete: true,
+      topic: topic || context_profile?.video_title,
+      target_length: targetLength,
+      
+      // Stage outputs
       research_pack: {
         sources: researchPack.sources,
         claims: alignedClaims,
       },
       alignment_stats: alignmentStats,
       tone_summary: toneSummary,
-      context_use_log: contextUseLog,
-      retention_elements: retentionElements,
-      validation: validation,
+      rag_results: ragResults,
+      rag_examples_section: ragExamplesSection,
+      
+      // Pass through for script stages
+      context_profile,
+      aligned_claims: alignedClaims,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

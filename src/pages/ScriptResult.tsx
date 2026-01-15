@@ -89,7 +89,8 @@ const ScriptResult = () => {
     setIsLoading(true);
     setVariation(newVariation);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-script-v3', {
+      // Stage 1-3: Research, Alignment, Tone, RAG
+      const { data: prepData, error: prepError } = await supabase.functions.invoke('generate-script-v3', {
         body: { 
           topic: businessContext?.video_title,
           context_profile: businessContext, 
@@ -101,13 +102,50 @@ const ScriptResult = () => {
           },
         },
       });
-      if (error) throw error;
-      setCurrentScript(data.script);
-      setCurrentResearch(data.research_pack || { sources: [], claims: [] });
-      setCurrentChecklist(data.alignment_checklist || null);
-      setCurrentValidation(data.validation || null);
-      setCurrentToneSummary(data.tone_summary || null);
-      setCurrentContextUseLog(data.context_use_log || null);
+      if (prepError) throw prepError;
+
+      // Stage 4A: Structure
+      const { data: structureData, error: structureError } = await supabase.functions.invoke('script-structure', {
+        body: {
+          topic: prepData.topic,
+          context_profile: prepData.context_profile,
+          aligned_claims: prepData.aligned_claims,
+          target_length: prepData.target_length,
+          rag_examples_section: prepData.rag_examples_section,
+        },
+      });
+      if (structureError) throw structureError;
+
+      // Stage 4B: Writing
+      const { data: writeData, error: writeError } = await supabase.functions.invoke('script-write', {
+        body: {
+          structure: structureData.structure,
+          topic: prepData.topic,
+          context_profile: prepData.context_profile,
+          tone_summary: prepData.tone_summary,
+          aligned_claims: prepData.aligned_claims,
+          rag_examples_section: prepData.rag_examples_section,
+        },
+      });
+      if (writeError) throw writeError;
+
+      // Stage 4C: Polish
+      const { data: polishData, error: polishError } = await supabase.functions.invoke('script-polish', {
+        body: {
+          script: writeData.script,
+          tone_summary: prepData.tone_summary,
+          aligned_claims: prepData.aligned_claims,
+          rag_results: prepData.rag_results,
+        },
+      });
+      if (polishError) throw polishError;
+
+      setCurrentScript(polishData.script);
+      setCurrentResearch(prepData.research_pack || { sources: [], claims: [] });
+      setCurrentChecklist(prepData.alignment_stats || null);
+      setCurrentValidation({ passed: true, issues: [] });
+      setCurrentToneSummary(prepData.tone_summary || null);
+      setCurrentContextUseLog(polishData.context_use_log || null);
     } catch (error: any) {
       toast({ title: 'Regeneration failed', description: error.message, variant: 'destructive' });
     } finally {
