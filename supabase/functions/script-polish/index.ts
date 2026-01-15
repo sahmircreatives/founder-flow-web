@@ -89,10 +89,14 @@ ${toneSummary.tone_rules.map((r: string, i: number) => `${i + 1}. ${r}`).join('\
    - Fix anything that sounds like a tweet or LinkedIn post
    - Ensure transitions between sections feel smooth
 
-4. FABRICATION CHECK:
-   - Flag any specific statistics that seem made up
-   - Ensure case studies use hypothetical framing ("Imagine..." or "Let's say...")
-   - No specific fake names (Sarah, Mike, etc.)
+4. FABRICATION CHECK (MOST CRITICAL):
+   - REMOVE any specific dollar amounts in examples/stories (e.g., "$220,000 refund") unless clearly hypothetical
+   - REMOVE any specific percentages that could be made up (e.g., "70% of startups")
+   - REWRITE case studies as clearly hypothetical: "Imagine you..." or "Let's say you..."
+   - REMOVE emotional invented details: "called me crying", "couldn't believe it", "texted me saying"
+   - REMOVE specific fake names (Sarah, Mike, John, etc.)
+   - REMOVE "Our first client", "One of our clients" stories with specific outcomes
+   - If in doubt about whether something is fabricated, REMOVE IT or make it vague
 
 Return JSON:
 {
