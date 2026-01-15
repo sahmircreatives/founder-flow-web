@@ -17,7 +17,6 @@ interface ToneSummary {
   writing_patterns: string[];
   dont_phrases: string[];
   cadence_notes: string[];
-  example_lines: string[];
 }
 
 interface ScriptStructure {
@@ -65,7 +64,6 @@ serve(async (req) => {
       writing_patterns: [],
       dont_phrases: [],
       cadence_notes: [],
-      example_lines: []
     };
     const scriptStructure: ScriptStructure = structure;
 
@@ -105,10 +103,7 @@ ${toneSummary.writing_patterns.map((p, i) => `${i + 1}. ${p}`).join('\n') || 'No
 
 AVOID: ${toneSummary.dont_phrases.join(', ') || 'None specified'}
 
-EXAMPLE LINES (rhythm/pacing reference ONLY - do NOT copy vocabulary):
-${toneSummary.example_lines.map(l => `"${l}"`).join('\n')}
-
-CRITICAL: No casual slang (Bruh, Dude, Yo, Bro, Man, Like) unless in examples above.`;
+CRITICAL: No casual slang (Bruh, Dude, Yo, Bro, Man, Like).`;
 
     const prompt = `You are a YouTube scriptwriter. Write a complete script following this exact structure.
 
@@ -144,6 +139,7 @@ ${rag_examples_section ? `=== REFERENCE EXAMPLES (structure/flow only) ===\n${ra
 7. Read it out loud - if it sounds punchy like social media, rewrite it
 8. DO NOT fabricate statistics or case studies not in the research claims
 9. Use hypothetical framing ("Imagine you..." or "Let's say...") for examples
+10. CREDIBILITY SECTION must use exactly: "I'm ${creator.name || '[CREATOR NAME]'}. ${creator.credibility_claim || '[CREDIBILITY CLAIM]'}" - Do not invent credentials.
 
 === OUTPUT FORMAT ===
 Write the complete script with section labels only (no timestamps, no markdown).
