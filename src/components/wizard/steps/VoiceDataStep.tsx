@@ -1,6 +1,11 @@
+import { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Copy, Check } from 'lucide-react';
 import { VoiceData } from '@/types/scriptGenerator';
+import { toast } from 'sonner';
 
 interface VoiceDataStepProps {
   data: VoiceData;
@@ -13,6 +18,9 @@ const toneOptions = [
 ];
 
 const VoiceDataStep = ({ data, onUpdate }: VoiceDataStepProps) => {
+  const [scrapeUsername, setScrapeUsername] = useState('');
+  const [copied, setCopied] = useState(false);
+
   const toggleTone = (tone: string) => {
     const currentTones = data.tone_goals;
     if (currentTones.includes(tone)) {
@@ -27,6 +35,20 @@ const VoiceDataStep = ({ data, onUpdate }: VoiceDataStepProps) => {
     onUpdate(field, items);
   };
 
+  const handleCopyUsername = async () => {
+    if (!scrapeUsername.trim()) {
+      toast.error('Enter a username first');
+      return;
+    }
+    
+    const username = scrapeUsername.trim().replace('@', '');
+    await navigator.clipboard.writeText(username);
+    setCopied(true);
+    toast.success(`Copied: ${username}`);
+    
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -35,6 +57,34 @@ const VoiceDataStep = ({ data, onUpdate }: VoiceDataStepProps) => {
       </div>
 
       <div className="space-y-5">
+        {/* Username to Scrape */}
+        <div>
+          <Label htmlFor="scrapeUsername" className="text-sm font-medium text-foreground mb-2 block">
+            Username to Scrape
+          </Label>
+          <p className="text-xs text-muted-foreground mb-2">
+            Enter the Twitter/X username you want to scrape, then copy it for your scraping tool.
+          </p>
+          <div className="flex gap-2">
+            <Input
+              id="scrapeUsername"
+              placeholder="@username"
+              value={scrapeUsername}
+              onChange={(e) => setScrapeUsername(e.target.value)}
+              className="bg-secondary/50 border-border text-foreground placeholder:text-muted-foreground"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCopyUsername}
+              className="shrink-0"
+            >
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copied ? 'Copied' : 'Copy'}
+            </Button>
+          </div>
+        </div>
+
         {/* Tweet Examples */}
         <div>
           <Label htmlFor="tweets" className="text-sm font-medium text-foreground mb-2 block">
