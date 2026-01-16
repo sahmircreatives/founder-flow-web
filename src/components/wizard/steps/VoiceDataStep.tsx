@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Copy, Check } from 'lucide-react';
 import { VoiceData } from '@/types/scriptGenerator';
@@ -10,6 +9,7 @@ import { toast } from 'sonner';
 interface VoiceDataStepProps {
   data: VoiceData;
   onUpdate: (field: keyof VoiceData, value: string | string[]) => void;
+  creatorName?: string;
 }
 
 const toneOptions = [
@@ -17,8 +17,7 @@ const toneOptions = [
   'Direct', 'Empathetic', 'Energetic', 'Educational', 'Inspirational'
 ];
 
-const VoiceDataStep = ({ data, onUpdate }: VoiceDataStepProps) => {
-  const [scrapeUsername, setScrapeUsername] = useState('');
+const VoiceDataStep = ({ data, onUpdate, creatorName }: VoiceDataStepProps) => {
   const [copied, setCopied] = useState(false);
 
   const toggleTone = (tone: string) => {
@@ -36,12 +35,12 @@ const VoiceDataStep = ({ data, onUpdate }: VoiceDataStepProps) => {
   };
 
   const handleCopyUsername = async () => {
-    if (!scrapeUsername.trim()) {
-      toast.error('Enter a username first');
+    if (!creatorName) {
+      toast.error('No creator name found from Business Context');
       return;
     }
     
-    const username = scrapeUsername.trim().replace('@', '');
+    const username = creatorName.trim().replace('@', '');
     await navigator.clipboard.writeText(username);
     setCopied(true);
     toast.success(`Copied: ${username}`);
@@ -57,33 +56,30 @@ const VoiceDataStep = ({ data, onUpdate }: VoiceDataStepProps) => {
       </div>
 
       <div className="space-y-5">
-        {/* Username to Scrape */}
-        <div>
-          <Label htmlFor="scrapeUsername" className="text-sm font-medium text-foreground mb-2 block">
-            Username to Scrape
-          </Label>
-          <p className="text-xs text-muted-foreground mb-2">
-            Enter the Twitter/X username you want to scrape, then copy it for your scraping tool.
-          </p>
-          <div className="flex gap-2">
-            <Input
-              id="scrapeUsername"
-              placeholder="@username"
-              value={scrapeUsername}
-              onChange={(e) => setScrapeUsername(e.target.value)}
-              className="bg-secondary/50 border-border text-foreground placeholder:text-muted-foreground"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCopyUsername}
-              className="shrink-0"
-            >
-              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              {copied ? 'Copied' : 'Copy'}
-            </Button>
+        {/* Copy Username for Scraping */}
+        {creatorName && (
+          <div className="p-4 bg-secondary/30 rounded-lg border border-border">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-foreground">Creator Username</p>
+                <p className="text-xs text-muted-foreground">Copy to use in your tweet scraping tool</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-foreground font-mono">{creatorName}</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyUsername}
+                  className="shrink-0"
+                >
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied ? 'Copied' : 'Copy'}
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Tweet Examples */}
         <div>
