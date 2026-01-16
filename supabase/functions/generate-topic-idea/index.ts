@@ -71,7 +71,7 @@ Based on this profile and context, what's ONE video topic that would perform wel
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-3-fast',
+        model: 'grok-4-0709',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
