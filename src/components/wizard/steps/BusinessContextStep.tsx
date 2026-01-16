@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { BusinessContext } from '@/types/scriptGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, AlertCircle, CheckCircle2, Lightbulb, Copy } from 'lucide-react';
+import { Loader2, Sparkles, AlertCircle, CheckCircle2, Lightbulb } from 'lucide-react';
 
 interface TitleSuggestion {
   title: string;
@@ -317,25 +317,6 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext }: Business
               onChange={(e) => setTitleUsername(e.target.value)}
               className="bg-secondary/50 border-border text-foreground placeholder:text-muted-foreground flex-1"
             />
-            <Button
-              onClick={() => {
-                const usernameWithoutAt = titleUsername.replace(/^@/, '').trim();
-                if (usernameWithoutAt) {
-                  navigator.clipboard.writeText(usernameWithoutAt);
-                  toast({
-                    title: 'Copied!',
-                    description: `Username "${usernameWithoutAt}" copied to clipboard.`,
-                  });
-                }
-              }}
-              disabled={!titleUsername.trim()}
-              variant="outline"
-              size="icon"
-              className="shrink-0"
-              title="Copy username"
-            >
-              <Copy className="w-4 h-4" />
-            </Button>
             <Button
               onClick={handleGetTopicAndTitles}
               disabled={isGeneratingTopic || isGeneratingTitles || !titleUsername.trim()}
