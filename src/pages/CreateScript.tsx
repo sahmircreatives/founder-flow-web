@@ -166,7 +166,7 @@ const CreateScript = () => {
           />
         );
       case 2:
-        return <VoiceDataStep data={voiceData} onUpdate={updateVoiceData} />;
+        return <VoiceDataStep data={voiceData} onUpdate={updateVoiceData} creatorName={businessContext.business_context?.creator?.name || ''} />;
       case 3:
         return <ReviewStep businessContext={businessContext} voiceData={voiceData} onEditStep={goToStep} />;
       default:
