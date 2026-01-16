@@ -6,7 +6,12 @@ import { Button } from '@/components/ui/button';
 import { BusinessContext } from '@/types/scriptGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Loader2, Sparkles, AlertCircle, CheckCircle2, Lightbulb } from 'lucide-react';
+
+interface TitleSuggestion {
+  title: string;
+  angle: string;
+}
 
 interface BusinessContextStepProps {
   businessContext: BusinessContext;
@@ -117,6 +122,11 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext }: Business
     JSON.stringify(businessContext.business_context, null, 2)
   );
   const [jsonError, setJsonError] = useState<string | null>(null);
+  
+  // Title suggestion state
+  const [roughTopic, setRoughTopic] = useState('');
+  const [isGeneratingTitles, setIsGeneratingTitles] = useState(false);
+  const [titleSuggestions, setTitleSuggestions] = useState<TitleSuggestion[]>([]);
 
   const handleGrokFill = async () => {
     if (!username.trim()) {
@@ -194,6 +204,59 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext }: Business
     });
   };
 
+  const handleGenerateTitles = async () => {
+    if (!roughTopic.trim()) {
+      toast({
+        title: 'Topic required',
+        description: 'Please enter a rough topic or idea first.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsGeneratingTitles(true);
+    setTitleSuggestions([]);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-title-suggestions', {
+        body: {
+          roughTopic: roughTopic.trim(),
+          businessContext: businessContext,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setTitleSuggestions(data.suggestions || []);
+
+      toast({
+        title: 'Title ideas generated',
+        description: 'Click on a title to use it.',
+      });
+    } catch (error: any) {
+      console.error('Title generation error:', error);
+      toast({
+        title: 'Failed to generate titles',
+        description: error.message || 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeneratingTitles(false);
+    }
+  };
+
+  const handleSelectTitle = (title: string) => {
+    handleVideoTitleChange(title);
+    toast({
+      title: 'Title selected',
+      description: 'You can edit it further if needed.',
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -204,17 +267,74 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext }: Business
       </div>
 
       {/* Video Title */}
-      <div>
-        <Label htmlFor="videoTitle" className="text-sm font-medium text-foreground mb-2 block">
-          Video Title / Topic
-        </Label>
-        <Input
-          id="videoTitle"
-          placeholder="e.g., How I Built a 6-Figure Coaching Business"
-          value={businessContext.video_title}
-          onChange={(e) => handleVideoTitleChange(e.target.value)}
-          className="bg-secondary/50 border-border text-foreground placeholder:text-muted-foreground"
-        />
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="videoTitle" className="text-sm font-medium text-foreground mb-2 block">
+            Video Title
+          </Label>
+          <Input
+            id="videoTitle"
+            placeholder="e.g., How I Built a 6-Figure Coaching Business"
+            value={businessContext.video_title}
+            onChange={(e) => handleVideoTitleChange(e.target.value)}
+            className="bg-secondary/50 border-border text-foreground placeholder:text-muted-foreground"
+          />
+        </div>
+
+        {/* Title Generator */}
+        <div className="p-4 rounded-xl border border-border bg-secondary/20 space-y-3">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-foreground">Need help with the title?</span>
+          </div>
+          
+          <div className="flex gap-2">
+            <Input
+              placeholder="Enter a rough topic or idea..."
+              value={roughTopic}
+              onChange={(e) => setRoughTopic(e.target.value)}
+              className="bg-secondary/50 border-border text-foreground placeholder:text-muted-foreground flex-1"
+            />
+            <Button
+              onClick={handleGenerateTitles}
+              disabled={isGeneratingTitles || !roughTopic.trim()}
+              variant="outline"
+              className="shrink-0"
+            >
+              {isGeneratingTitles ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                'Generate Ideas'
+              )}
+            </Button>
+          </div>
+
+          {/* Title Suggestions */}
+          {titleSuggestions.length > 0 && (
+            <div className="space-y-2 pt-2">
+              <p className="text-xs text-muted-foreground">Click to select:</p>
+              <div className="space-y-2">
+                {titleSuggestions.map((suggestion, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSelectTitle(suggestion.title)}
+                    className="w-full text-left p-3 rounded-lg border border-border bg-background hover:bg-secondary/50 hover:border-primary/50 transition-colors group"
+                  >
+                    <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                      {suggestion.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {suggestion.angle}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Grok Auto-fill Section */}
