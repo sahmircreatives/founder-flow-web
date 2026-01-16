@@ -16,6 +16,8 @@ interface TitleSuggestion {
 interface BusinessContextStepProps {
   businessContext: BusinessContext;
   onSetBusinessContext: (context: BusinessContext) => void;
+  twitterUsername: string;
+  onSetTwitterUsername: (username: string) => void;
 }
 
 const emptyTemplate = {
@@ -112,9 +114,9 @@ const emptyTemplate = {
   }
 };
 
-const BusinessContextStep = ({ businessContext, onSetBusinessContext }: BusinessContextStepProps) => {
+const BusinessContextStep = ({ businessContext, onSetBusinessContext, twitterUsername, onSetTwitterUsername }: BusinessContextStepProps) => {
   const { toast } = useToast();
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState(twitterUsername || '');
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [wasAutoFilled, setWasAutoFilled] = useState(false);
@@ -124,7 +126,7 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext }: Business
   const [jsonError, setJsonError] = useState<string | null>(null);
   
   // Title suggestion state
-  const [titleUsername, setTitleUsername] = useState('');
+  const [titleUsername, setTitleUsername] = useState(twitterUsername || '');
   const [roughTopic, setRoughTopic] = useState('');
   const [isGeneratingTopic, setIsGeneratingTopic] = useState(false);
   const [isGeneratingTitles, setIsGeneratingTitles] = useState(false);
@@ -167,6 +169,10 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext }: Business
       onSetBusinessContext(newContext);
       setJsonValue(JSON.stringify(data.business_context, null, 2));
       setWasAutoFilled(true);
+      
+      // Save the username to global state for use in Voice step
+      onSetTwitterUsername(username.trim());
+      setTitleUsername(username.trim());
 
       toast({
         title: 'Auto-filled successfully',
@@ -253,6 +259,9 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext }: Business
       if (titlesData.error) throw new Error(titlesData.error);
 
       setTitleSuggestions(titlesData.suggestions || []);
+      
+      // Save the username to global state for use in Voice step
+      onSetTwitterUsername(titleUsername.trim());
 
       toast({
         title: 'Title ideas ready',

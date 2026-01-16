@@ -55,7 +55,9 @@ const CreateScript = () => {
     totalSteps,
     businessContext,
     voiceData,
+    twitterUsername,
     setBusinessContext,
+    setTwitterUsername,
     updateVoiceData,
     nextStep,
     prevStep,
@@ -163,10 +165,12 @@ const CreateScript = () => {
           <BusinessContextStep
             businessContext={businessContext}
             onSetBusinessContext={setBusinessContext}
+            twitterUsername={twitterUsername}
+            onSetTwitterUsername={setTwitterUsername}
           />
         );
       case 2:
-        return <VoiceDataStep data={voiceData} onUpdate={updateVoiceData} creatorName={businessContext.business_context?.creator?.name || ''} />;
+        return <VoiceDataStep data={voiceData} onUpdate={updateVoiceData} twitterUsername={twitterUsername} />;
       case 3:
         return <ReviewStep businessContext={businessContext} voiceData={voiceData} onEditStep={goToStep} />;
       default:
