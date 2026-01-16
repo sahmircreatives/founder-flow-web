@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.create-google-doc]
 verify_jwt = false
+
+[functions.generate-title-suggestions]
+verify_jwt = false
