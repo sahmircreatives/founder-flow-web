@@ -35,6 +35,14 @@ serve(async (req) => {
 YOUR TASK:
 Research the X/Twitter profile and optional website to extract comprehensive business intelligence. Fill every field with specific, actionable data.
 
+ABSOLUTE RULES FOR COMPANY/BUSINESS NAME EXTRACTION:
+1. ONLY use company names that appear EXACTLY in the Twitter bio, profile name, or pinned tweet
+2. If the bio says "Founder of @fondocom" → the company is "Fondo" (from the handle)
+3. If the bio says "CEO at Acme Corp" → the company is "Acme Corp"
+4. NEVER invent, guess, or hallucinate company names that don't appear in the profile
+5. If no company name is clearly stated, use the creator's personal brand name
+6. Include a "_source_verification" field with the exact text from the bio where you found the company name
+
 CRITICAL RULES:
 1. Return ONLY valid JSON - no markdown, no code fences, no explanatory text
 2. Preserve the exact JSON structure from the template
@@ -42,6 +50,7 @@ CRITICAL RULES:
 4. For INFERRED data: prefix with "INFERRED: " followed by your best estimate
 5. Arrays must contain at least 2-3 items when data is available
 6. Be SPECIFIC - avoid generic filler like "improve results" or "grow business"
+7. NEVER fabricate company names, product names, or statistics not in the source material
 
 ENUM FIELDS - Use ONLY these values:
 - business.type: coaching | agency | saas | ecommerce | info_product | service | personal_brand
@@ -54,13 +63,15 @@ ENUM FIELDS - Use ONLY these values:
 - industry.competition_level: low | medium | high
 
 PRIORITY RESEARCH AREAS:
-1. business.unique_mechanism - What makes their approach different? Look for frameworks, methods, systems
-2. offer.main_outcome - The specific transformation/result promised
-3. creator.credibility_claim - Their proof of expertise (results, experience, credentials)
-4. icp_pain_points.primary_problem - The core struggle their audience faces
-5. transformation.proof_points - Specific results, case studies, testimonials mentioned
+1. business.name - Extract EXACT company name from bio (critical - no guessing!)
+2. business.unique_mechanism - What makes their approach different? Look for frameworks, methods, systems
+3. offer.main_outcome - The specific transformation/result promised
+4. creator.credibility_claim - Their proof of expertise (results, experience, credentials)
+5. icp_pain_points.primary_problem - The core struggle their audience faces
+6. transformation.proof_points - Specific results, case studies, testimonials mentioned
 
-DO NOT use tweets as factual evidence - focus on bio, pinned content, website, and stated claims.`;
+DO NOT use tweets as factual evidence - focus on bio, pinned content, website, and stated claims.
+NEVER invent company names. If unsure, use "UNKNOWN" or the creator's name as personal brand.`;
 
     const userPrompt = `RESEARCH TARGET: @${cleanUsername}
 WEBSITE: ${websiteUrl || 'Not provided - research profile only'}
@@ -152,6 +163,21 @@ Return the completed JSON only.`;
     if (!parsed.business_context) {
       console.error('[grok-fill-business] Invalid structure: missing business_context');
       throw new Error('Invalid response structure: missing business_context');
+    }
+
+    // Validate company name extraction - check for source verification
+    const businessName = parsed.business_context?.business?.name;
+    const sourceVerification = parsed._source_verification;
+    
+    console.log(`[grok-fill-business] Extracted business name: "${businessName}"`);
+    console.log(`[grok-fill-business] Source verification: "${sourceVerification}"`);
+    
+    // Warn if no source verification was provided (potential hallucination)
+    if (businessName && businessName !== 'UNKNOWN' && !businessName.startsWith('INFERRED:') && !sourceVerification) {
+      console.warn(`[grok-fill-business] WARNING: Business name "${businessName}" has no source verification - potential hallucination`);
+      // Add a flag to the response so frontend can show warning
+      parsed._extraction_warnings = parsed._extraction_warnings || [];
+      parsed._extraction_warnings.push(`Business name "${businessName}" could not be verified from profile bio`);
     }
 
     console.log(`[grok-fill-business] Successfully filled business context for @${cleanUsername}`);
