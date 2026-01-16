@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 interface VoiceDataStepProps {
   data: VoiceData;
   onUpdate: (field: keyof VoiceData, value: string | string[]) => void;
-  creatorName?: string;
+  twitterUsername?: string;
 }
 
 const toneOptions = [
@@ -17,7 +17,7 @@ const toneOptions = [
   'Direct', 'Empathetic', 'Energetic', 'Educational', 'Inspirational'
 ];
 
-const VoiceDataStep = ({ data, onUpdate, creatorName }: VoiceDataStepProps) => {
+const VoiceDataStep = ({ data, onUpdate, twitterUsername }: VoiceDataStepProps) => {
   const [copied, setCopied] = useState(false);
 
   const toggleTone = (tone: string) => {
@@ -35,12 +35,12 @@ const VoiceDataStep = ({ data, onUpdate, creatorName }: VoiceDataStepProps) => {
   };
 
   const handleCopyUsername = async () => {
-    if (!creatorName) {
-      toast.error('No creator name found from Business Context');
+    if (!twitterUsername) {
+      toast.error('No username found from Business Context');
       return;
     }
     
-    const username = creatorName.trim().replace('@', '');
+    const username = twitterUsername.trim().replace('@', '');
     await navigator.clipboard.writeText(username);
     setCopied(true);
     toast.success(`Copied: ${username}`);
@@ -57,15 +57,15 @@ const VoiceDataStep = ({ data, onUpdate, creatorName }: VoiceDataStepProps) => {
 
       <div className="space-y-5">
         {/* Copy Username for Scraping */}
-        {creatorName && (
+        {twitterUsername && (
           <div className="p-4 bg-secondary/30 rounded-lg border border-border">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-medium text-foreground">Creator Username</p>
+                <p className="text-sm font-medium text-foreground">Twitter/X Username</p>
                 <p className="text-xs text-muted-foreground">Copy to use in your tweet scraping tool</p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-foreground font-mono">{creatorName}</span>
+                <span className="text-sm text-foreground font-mono">@{twitterUsername.replace('@', '')}</span>
                 <Button
                   type="button"
                   variant="outline"

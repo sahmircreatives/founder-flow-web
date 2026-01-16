@@ -3,6 +3,7 @@ import { BusinessContext, VoiceData } from '@/types/scriptGenerator';
 
 const STORAGE_KEY_BUSINESS = 'script_wizard_business_context';
 const STORAGE_KEY_VOICE = 'script_wizard_voice_data';
+const STORAGE_KEY_USERNAME = 'script_wizard_twitter_username';
 
 // Initial empty state for business context (new structure)
 const initialBusinessContext: BusinessContext = {
@@ -136,6 +137,9 @@ export const useScriptWizard = () => {
   const [voiceData, setVoiceDataState] = useState<VoiceData>(() => 
     loadFromStorage(STORAGE_KEY_VOICE, initialVoiceData)
   );
+  const [twitterUsername, setTwitterUsernameState] = useState<string>(() => 
+    loadFromStorage(STORAGE_KEY_USERNAME, '')
+  );
 
   // 3 steps: Business Context, Voice, Review
   const totalSteps = 3;
@@ -150,9 +154,18 @@ export const useScriptWizard = () => {
     saveToStorage(STORAGE_KEY_VOICE, voiceData);
   }, [voiceData]);
 
+  // Persist twitterUsername to localStorage
+  useEffect(() => {
+    saveToStorage(STORAGE_KEY_USERNAME, twitterUsername);
+  }, [twitterUsername]);
+
   // Bulk update for business context (used by Grok auto-fill)
   const setBusinessContext = useCallback((context: BusinessContext) => {
     setBusinessContextState(context);
+  }, []);
+
+  const setTwitterUsername = useCallback((username: string) => {
+    setTwitterUsernameState(username);
   }, []);
 
   const updateVoiceData = useCallback((field: keyof VoiceData, value: string | string[]) => {
@@ -184,8 +197,10 @@ export const useScriptWizard = () => {
     setCurrentStep(1);
     setBusinessContextState(initialBusinessContext);
     setVoiceDataState(initialVoiceData);
+    setTwitterUsernameState('');
     localStorage.removeItem(STORAGE_KEY_BUSINESS);
     localStorage.removeItem(STORAGE_KEY_VOICE);
+    localStorage.removeItem(STORAGE_KEY_USERNAME);
   }, []);
 
   return {
@@ -193,7 +208,9 @@ export const useScriptWizard = () => {
     totalSteps,
     businessContext,
     voiceData,
+    twitterUsername,
     setBusinessContext,
+    setTwitterUsername,
     updateVoiceData,
     nextStep,
     prevStep,
