@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.generate-title-suggestions]
 verify_jwt = false
+
+[functions.generate-topic-idea]
+verify_jwt = false

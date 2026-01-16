@@ -124,7 +124,9 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext }: Business
   const [jsonError, setJsonError] = useState<string | null>(null);
   
   // Title suggestion state
+  const [titleUsername, setTitleUsername] = useState('');
   const [roughTopic, setRoughTopic] = useState('');
+  const [isGeneratingTopic, setIsGeneratingTopic] = useState(false);
   const [isGeneratingTitles, setIsGeneratingTitles] = useState(false);
   const [titleSuggestions, setTitleSuggestions] = useState<TitleSuggestion[]>([]);
 
@@ -204,11 +206,57 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext }: Business
     });
   };
 
+  const handleGetTopicFromGrok = async () => {
+    if (!titleUsername.trim()) {
+      toast({
+        title: 'Username required',
+        description: 'Please enter a Twitter/X username.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsGeneratingTopic(true);
+    setRoughTopic('');
+    setTitleSuggestions([]);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-topic-idea', {
+        body: {
+          username: titleUsername.trim(),
+          businessContext: businessContext,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setRoughTopic(data.topic || '');
+
+      toast({
+        title: 'Topic generated',
+        description: 'Now click "Generate Ideas" to get title suggestions.',
+      });
+    } catch (error: any) {
+      console.error('Topic generation error:', error);
+      toast({
+        title: 'Failed to generate topic',
+        description: error.message || 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeneratingTopic(false);
+    }
+  };
+
   const handleGenerateTitles = async () => {
     if (!roughTopic.trim()) {
       toast({
         title: 'Topic required',
-        description: 'Please enter a rough topic or idea first.',
+        description: 'Please get a topic from Grok first.',
         variant: 'destructive',
       });
       return;
@@ -282,35 +330,66 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext }: Business
         </div>
 
         {/* Title Generator */}
-        <div className="p-4 rounded-xl border border-border bg-secondary/20 space-y-3">
+        <div className="p-4 rounded-xl border border-border bg-secondary/20 space-y-4">
           <div className="flex items-center gap-2">
             <Lightbulb className="w-4 h-4 text-primary" />
             <span className="text-sm font-medium text-foreground">Need help with the title?</span>
           </div>
           
-          <div className="flex gap-2">
-            <Input
-              placeholder="Enter a rough topic or idea..."
-              value={roughTopic}
-              onChange={(e) => setRoughTopic(e.target.value)}
-              className="bg-secondary/50 border-border text-foreground placeholder:text-muted-foreground flex-1"
-            />
-            <Button
-              onClick={handleGenerateTitles}
-              disabled={isGeneratingTitles || !roughTopic.trim()}
-              variant="outline"
-              className="shrink-0"
-            >
-              {isGeneratingTitles ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                'Generate Ideas'
-              )}
-            </Button>
+          {/* Step 1: Get topic from Grok */}
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">Step 1: Get a topic idea from Grok</p>
+            <div className="flex gap-2">
+              <Input
+                placeholder="@username"
+                value={titleUsername}
+                onChange={(e) => setTitleUsername(e.target.value)}
+                className="bg-secondary/50 border-border text-foreground placeholder:text-muted-foreground flex-1"
+              />
+              <Button
+                onClick={handleGetTopicFromGrok}
+                disabled={isGeneratingTopic || !titleUsername.trim()}
+                variant="outline"
+                className="shrink-0"
+              >
+                {isGeneratingTopic ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Getting topic...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Get Topic
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
+
+          {/* Step 2: Show topic and generate titles */}
+          {roughTopic && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">Step 2: Generate title ideas from this topic</p>
+              <div className="p-3 rounded-lg bg-primary/10 border border-primary/30">
+                <p className="text-sm text-foreground">{roughTopic}</p>
+              </div>
+              <Button
+                onClick={handleGenerateTitles}
+                disabled={isGeneratingTitles}
+                className="w-full gradient-bg text-white hover:opacity-90"
+              >
+                {isGeneratingTitles ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating titles...
+                  </>
+                ) : (
+                  'Generate Title Ideas'
+                )}
+              </Button>
+            </div>
+          )}
 
           {/* Title Suggestions */}
           {titleSuggestions.length > 0 && (
