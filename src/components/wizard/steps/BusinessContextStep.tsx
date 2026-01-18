@@ -202,7 +202,12 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext, twitterUse
     setJsonError(null);
 
     try {
-      const parsed = JSON.parse(value);
+      // Sanitize: fix newlines inside strings by replacing them with spaces
+      const sanitized = value.replace(/"([^"\\]*(\\.[^"\\]*)*)"/g, (match) => {
+        return match.replace(/\n/g, ' ').replace(/\r/g, '').replace(/\s+/g, ' ');
+      });
+      
+      const parsed = JSON.parse(sanitized);
       onSetBusinessContext({
         video_title: businessContext.video_title,
         business_context: parsed,
