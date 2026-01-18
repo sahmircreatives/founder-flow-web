@@ -34,7 +34,7 @@ serve(async (req) => {
     const transformation = businessContext?.business_context?.transformation || {};
     const creator = businessContext?.business_context?.creator || {};
 
-    const systemPrompt = `You are an expert YouTube title writer specializing in high-converting video titles for coaches, consultants, and info-product creators.
+    const systemPrompt = `You are an expert YouTube title writer specializing in high-converting video titles for finance and business creators.
 
 Your titles should:
 1. Create curiosity and intrigue
@@ -44,12 +44,19 @@ Your titles should:
 5. Be optimized for YouTube CTR (click-through rate)
 
 Title formulas that work:
-- "How I [achieved result] in [timeframe] (and how you can too)"
-- "The [unique mechanism] that [transformed result]"
-- "Why [common approach] is keeping you [stuck/poor/etc]"
-- "[Number] [things] that [transformed my business/life]"
-- "I [did something unexpected] and [got amazing result]"
-- "The [hidden/secret/counterintuitive] reason [pain point exists]"
+- Open Loop: "[Unexpected Action] + [Vague Consequence]" (e.g., "I sold everything and bought this one stock")
+- Action-Result: "I [Bold Action] for [Time Frame], this is what happened" (e.g., "I tried 5 passive income streams for a year, this is what happened")
+- Secret/Authority: "How a [Professional/Expert] actually [does specific task]" (e.g., "How a hedge fund manager actually picks stocks")
+- Negative Storytelling: "I regret [Action/Purchase]" or "My biggest [Topic] mistake" (e.g., "I regret picking these stocks last year")
+- Objection-Handler: "How to [Desired Result] without [Common Pain Point]" (e.g., "How to build wealth without a high income")
+- Specific Audience: "[Topic] for [Specific Group/Level]" (e.g., "Investing for beginners with $100")
+
+Best practices:
+- Frontload important keywords (mobile truncation)
+- Keep titles under 55 characters when possible
+- Use power words: "warning," "proven," "secret," "hidden," "exposed"
+- Never give away the answer—leave the loop open
+- Add the current year for search-based content (e.g., "in 2025")
 
 Return ONLY a JSON array of exactly 5 title objects, each with:
 - "title": The video title (max 70 characters)
