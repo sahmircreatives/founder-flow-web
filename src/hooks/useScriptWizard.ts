@@ -131,33 +131,12 @@ const saveToStorage = <T>(key: string, value: T) => {
 
 export const useScriptWizard = () => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [businessContext, setBusinessContextState] = useState<BusinessContext>(() => 
-    loadFromStorage(STORAGE_KEY_BUSINESS, initialBusinessContext)
-  );
-  const [voiceData, setVoiceDataState] = useState<VoiceData>(() => 
-    loadFromStorage(STORAGE_KEY_VOICE, initialVoiceData)
-  );
-  const [twitterUsername, setTwitterUsernameState] = useState<string>(() => 
-    loadFromStorage(STORAGE_KEY_USERNAME, '')
-  );
+  const [businessContext, setBusinessContextState] = useState<BusinessContext>(initialBusinessContext);
+  const [voiceData, setVoiceDataState] = useState<VoiceData>(initialVoiceData);
+  const [twitterUsername, setTwitterUsernameState] = useState<string>('');
 
   // 3 steps: Business Context, Voice, Review
   const totalSteps = 3;
-
-  // Persist businessContext to localStorage
-  useEffect(() => {
-    saveToStorage(STORAGE_KEY_BUSINESS, businessContext);
-  }, [businessContext]);
-
-  // Persist voiceData to localStorage
-  useEffect(() => {
-    saveToStorage(STORAGE_KEY_VOICE, voiceData);
-  }, [voiceData]);
-
-  // Persist twitterUsername to localStorage
-  useEffect(() => {
-    saveToStorage(STORAGE_KEY_USERNAME, twitterUsername);
-  }, [twitterUsername]);
 
   // Bulk update for business context (used by Grok auto-fill)
   const setBusinessContext = useCallback((context: BusinessContext) => {
