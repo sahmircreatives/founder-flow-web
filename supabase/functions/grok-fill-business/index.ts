@@ -30,27 +30,27 @@ serve(async (req) => {
     const cleanUsername = username.replace(/^@/, '');
     console.log(`[grok-fill-business] Starting research for @${cleanUsername}`);
 
-    const systemPrompt = `You are a business research specialist filling structured context for a YouTube VSL script generator.
+    const systemPrompt = `You are a business research specialist. You MUST use web search to look up the actual X/Twitter profile before responding.
 
 YOUR TASK:
-Research the X/Twitter profile and optional website to extract comprehensive business intelligence. Fill every field with specific, actionable data.
+1. FIRST: Search the web for "site:x.com ${cleanUsername}" or "twitter.com/${cleanUsername}" to find their ACTUAL profile
+2. Read their bio, profile name, pinned tweet, and link-in-bio
+3. Fill the template with ONLY information you found from web search
 
-ABSOLUTE RULES FOR COMPANY/BUSINESS NAME EXTRACTION:
-1. ONLY use company names that appear EXACTLY in the Twitter bio, profile name, or pinned tweet
-2. If the bio says "Founder of @fondocom" → the company is "Fondo" (from the handle)
-3. If the bio says "CEO at Acme Corp" → the company is "Acme Corp"
-4. NEVER invent, guess, or hallucinate company names that don't appear in the profile
-5. If no company name is clearly stated, use the creator's personal brand name
-6. Include a "_source_verification" field with the exact text from the bio where you found the company name
+CRITICAL - ANTI-HALLUCINATION RULES:
+1. You MUST search the web first - do NOT rely on training data
+2. ONLY report what you ACTUALLY see on their profile right now
+3. If you cannot find specific information, use "UNKNOWN" - NEVER guess or invent
+4. Business name: ONLY use names that appear in their bio/profile. If bio says "Best cold emailer" with no company name, use their personal brand name (their display name)
+5. Include "_source_verification" with the EXACT text from the bio where you found each key claim
+6. For @jn_jackk example: if bio says "Booking clients meetings with Fortune500 Execs" and "Done-For-You Cold Email", the business is likely "cold email agency" NOT some invented product name
 
-CRITICAL RULES:
-1. Return ONLY valid JSON - no markdown, no code fences, no explanatory text
-2. Preserve the exact JSON structure from the template
-3. For UNKNOWN data: use "UNKNOWN" (not empty strings)
-4. For INFERRED data: prefix with "INFERRED: " followed by your best estimate
-5. Arrays must contain at least 2-3 items when data is available
-6. Be SPECIFIC - avoid generic filler like "improve results" or "grow business"
-7. NEVER fabricate company names, product names, or statistics not in the source material
+STRICT RULES:
+1. Return ONLY valid JSON - no markdown, no code fences
+2. For UNKNOWN data: use "UNKNOWN" (not empty strings)
+3. For INFERRED data: prefix with "INFERRED: "
+4. NEVER fabricate company names, product names, or statistics
+5. If the profile has a link like "cal.com/team/X" or similar, research that too
 
 ENUM FIELDS - Use ONLY these values:
 - business.type: coaching | agency | saas | ecommerce | info_product | service | personal_brand
@@ -63,23 +63,26 @@ ENUM FIELDS - Use ONLY these values:
 - industry.competition_level: low | medium | high
 
 PRIORITY RESEARCH AREAS:
-1. business.name - Extract EXACT company name from bio (critical - no guessing!)
-2. business.unique_mechanism - What makes their approach different? Look for frameworks, methods, systems
-3. offer.main_outcome - The specific transformation/result promised
-4. creator.credibility_claim - Their proof of expertise (results, experience, credentials)
-5. icp_pain_points.primary_problem - The core struggle their audience faces
-6. transformation.proof_points - Specific results, case studies, testimonials mentioned
+1. business.name - EXACT name from bio OR their display name as personal brand
+2. business.description - What do they actually DO based on bio text
+3. business.unique_mechanism - Their method/framework if stated
+4. offer.main_outcome - The transformation they promise
+5. creator.credibility_claim - Results/experience they mention`;
 
-DO NOT use tweets as factual evidence - focus on bio, pinned content, website, and stated claims.
-NEVER invent company names. If unsure, use "UNKNOWN" or the creator's name as personal brand.`;
+    const userPrompt = `SEARCH THE WEB for @${cleanUsername} on X/Twitter.
+${websiteUrl ? `Also search/visit: ${websiteUrl}` : ''}
 
-    const userPrompt = `RESEARCH TARGET: @${cleanUsername}
-WEBSITE: ${websiteUrl || 'Not provided - research profile only'}
+Look at their:
+- Profile display name
+- Bio text
+- Link in bio (if any)
+- Pinned tweet (if visible)
 
-Fill every field in this template with researched data about this creator/business:
+Then fill this template with ONLY verified information from your search:
 
 ${JSON.stringify(template, null, 2)}
 
+IMPORTANT: Include "_source_verification" field showing the exact bio text you found.
 Return the completed JSON only.`;
 
     console.log(`[grok-fill-business] Calling xAI API...`);
@@ -97,7 +100,8 @@ Return the completed JSON only.`;
           { role: 'user', content: userPrompt }
         ],
         max_tokens: 4000,
-        temperature: 0.3,
+        temperature: 0.2,
+        search: true, // Enable web search for real-time profile data
       }),
     });
 
