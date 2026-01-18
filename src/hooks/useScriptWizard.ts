@@ -1,9 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { BusinessContext, VoiceData } from '@/types/scriptGenerator';
-
-const STORAGE_KEY_BUSINESS = 'script_wizard_business_context';
-const STORAGE_KEY_VOICE = 'script_wizard_voice_data';
-const STORAGE_KEY_USERNAME = 'script_wizard_twitter_username';
 
 // Initial empty state for business context (new structure)
 const initialBusinessContext: BusinessContext = {
@@ -107,28 +103,6 @@ const initialVoiceData: VoiceData = {
   dont_phrases: [],
 };
 
-// Load from localStorage
-const loadFromStorage = <T>(key: string, fallback: T): T => {
-  try {
-    const stored = localStorage.getItem(key);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (e) {
-    console.error(`Failed to load ${key} from localStorage:`, e);
-  }
-  return fallback;
-};
-
-// Save to localStorage
-const saveToStorage = <T>(key: string, value: T) => {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (e) {
-    console.error(`Failed to save ${key} to localStorage:`, e);
-  }
-};
-
 export const useScriptWizard = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [businessContext, setBusinessContextState] = useState<BusinessContext>(initialBusinessContext);
@@ -177,9 +151,6 @@ export const useScriptWizard = () => {
     setBusinessContextState(initialBusinessContext);
     setVoiceDataState(initialVoiceData);
     setTwitterUsernameState('');
-    localStorage.removeItem(STORAGE_KEY_BUSINESS);
-    localStorage.removeItem(STORAGE_KEY_VOICE);
-    localStorage.removeItem(STORAGE_KEY_USERNAME);
   }, []);
 
   return {
