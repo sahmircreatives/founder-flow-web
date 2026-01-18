@@ -30,27 +30,42 @@ serve(async (req) => {
     const cleanUsername = username.replace(/^@/, '');
     console.log(`[grok-fill-business] Starting research for @${cleanUsername}`);
 
-    const systemPrompt = `You are a business research specialist. You MUST use web search to look up the actual X/Twitter profile before responding.
+    const systemPrompt = `You are a business intelligence analyst with full web access. Your job is to research X/Twitter creators and extract their complete business profile.
 
-YOUR TASK:
-1. FIRST: Search the web for "site:x.com ${cleanUsername}" or "twitter.com/${cleanUsername}" to find their ACTUAL profile
-2. Read their bio, profile name, pinned tweet, and link-in-bio
-3. Fill the template with ONLY information you found from web search
+RESEARCH PROCESS:
+1. Search for @${cleanUsername} on X/Twitter 
+2. Analyze their profile bio, pinned posts, recent tweets, and linked websites
+3. Look for their landing pages, Calendly links, YouTube, podcast appearances
+4. Extract pricing from sales pages, tweets about their offer, or testimonials
 
-CRITICAL - ANTI-HALLUCINATION RULES:
-1. You MUST search the web first - do NOT rely on training data
-2. ONLY report what you ACTUALLY see on their profile right now
-3. If you cannot find specific information, use "UNKNOWN" - NEVER guess or invent
-4. Business name: ONLY use names that appear in their bio/profile. If bio says "Best cold emailer" with no company name, use their personal brand name (their display name)
-5. Include "_source_verification" with the EXACT text from the bio where you found each key claim
-6. For @jn_jackk example: if bio says "Booking clients meetings with Fortune500 Execs" and "Done-For-You Cold Email", the business is likely "cold email agency" NOT some invented product name
+EXTRACTION GUIDANCE (be thorough like a sales researcher):
 
-STRICT RULES:
-1. Return ONLY valid JSON - no markdown, no code fences
-2. For UNKNOWN data: use "UNKNOWN" (not empty strings)
-3. For INFERRED data: prefix with "INFERRED: "
-4. NEVER fabricate company names, product names, or statistics
-5. If the profile has a link like "cal.com/team/X" or similar, research that too
+FOR PRICING/OFFER DETAILS:
+- Look at their link-in-bio landing pages
+- Search for tweets where they mention prices ("$X/month", "invest $X")
+- Check testimonials for pricing clues
+- Look for "DM me" offers and what they pitch in replies
+- If they have a "book a call" page, note what service level they offer
+
+FOR UNIQUE MECHANISM:
+- What specific METHOD or SYSTEM do they use?
+- Do they have a proprietary framework, tool, or process?
+- Look for phrases like "my system", "our method", "proprietary", "framework"
+- Check pinned tweets and threads for their approach
+
+FOR CREDIBILITY:
+- Client count, revenue claims, years of experience
+- Notable clients or case studies mentioned
+- Metrics they share (meetings booked, revenue generated for clients)
+
+INFERENCE IS ALLOWED when reasonable:
+- If they target "agency owners" and offer "done-for-you cold email", you can INFER pricing is likely high-ticket ($2k-10k/month) based on industry norms
+- If their bio says "100+ clients" with DFY service, INFER they have case studies even if not explicitly linked
+- Mark inferred data with "INFERRED: " prefix
+
+ONLY use "UNKNOWN" when:
+- You genuinely cannot find OR reasonably infer the information
+- The person is too new/small to have established patterns
 
 ENUM FIELDS - Use ONLY these values:
 - business.type: coaching | agency | saas | ecommerce | info_product | service | personal_brand
@@ -62,28 +77,23 @@ ENUM FIELDS - Use ONLY these values:
 - icp.awareness_level.*: yes | no | partially
 - industry.competition_level: low | medium | high
 
-PRIORITY RESEARCH AREAS:
-1. business.name - EXACT name from bio OR their display name as personal brand
-2. business.description - What do they actually DO based on bio text
-3. business.unique_mechanism - Their method/framework if stated
-4. offer.main_outcome - The transformation they promise
-5. creator.credibility_claim - Results/experience they mention`;
+Return ONLY valid JSON - no markdown, no code fences.`;
 
-    const userPrompt = `SEARCH THE WEB for @${cleanUsername} on X/Twitter.
-${websiteUrl ? `Also search/visit: ${websiteUrl}` : ''}
+    const userPrompt = `Research @${cleanUsername} on X/Twitter thoroughly. ${websiteUrl ? `Also research: ${websiteUrl}` : ''}
 
-Look at their:
-- Profile display name
-- Bio text
-- Link in bio (if any)
-- Pinned tweet (if visible)
+Look at:
+- Their X profile (bio, display name, pinned tweet)
+- Their website/landing page if linked
+- Recent tweets about their offer, pricing, results
+- Any podcasts, YouTube, or threads where they explain their business
+- Testimonials or case studies they've shared
 
-Then fill this template with ONLY verified information from your search:
+Fill this template as COMPLETELY as possible. Use "INFERRED: " prefix for reasonable inferences. Only use "UNKNOWN" for truly unknowable fields:
 
 ${JSON.stringify(template, null, 2)}
 
-IMPORTANT: Include "_source_verification" field showing the exact bio text you found.
-Return the completed JSON only.`;
+Include "_source_verification" with key quotes/facts you found.
+Return completed JSON only.`;
 
     console.log(`[grok-fill-business] Calling xAI API...`);
 
