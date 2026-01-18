@@ -13,6 +13,11 @@ interface TitleSuggestion {
   angle: string;
 }
 
+interface BestTitle {
+  title: string;
+  reason: string;
+}
+
 interface BusinessContextStepProps {
   businessContext: BusinessContext;
   onSetBusinessContext: (context: BusinessContext) => void;
@@ -130,7 +135,9 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext, twitterUse
   const [roughTopic, setRoughTopic] = useState('');
   const [isGeneratingTopic, setIsGeneratingTopic] = useState(false);
   const [isGeneratingTitles, setIsGeneratingTitles] = useState(false);
+  const [isSelectingBest, setIsSelectingBest] = useState(false);
   const [titleSuggestions, setTitleSuggestions] = useState<TitleSuggestion[]>([]);
+  const [bestTitles, setBestTitles] = useState<BestTitle[]>([]);
 
   const handleGrokFill = async () => {
     if (!username.trim()) {
@@ -225,6 +232,7 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext, twitterUse
     setIsGeneratingTopic(true);
     setRoughTopic('');
     setTitleSuggestions([]);
+    setBestTitles([]);
 
     try {
       // Step 1: Get topic from Grok
@@ -245,7 +253,8 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext, twitterUse
         throw new Error('No topic was generated');
       }
 
-      // Step 2: Automatically generate titles from the topic
+      // Step 2: Generate 5 titles from the topic
+      setIsGeneratingTopic(false);
       setIsGeneratingTitles(true);
 
       const { data: titlesData, error: titlesError } = await supabase.functions.invoke('generate-title-suggestions', {
@@ -258,14 +267,32 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext, twitterUse
       if (titlesError) throw titlesError;
       if (titlesData.error) throw new Error(titlesData.error);
 
-      setTitleSuggestions(titlesData.suggestions || []);
+      const allSuggestions = titlesData.suggestions || [];
+      setTitleSuggestions(allSuggestions);
+
+      // Step 3: Have Claude select the best 2
+      setIsGeneratingTitles(false);
+      setIsSelectingBest(true);
+
+      const { data: bestData, error: bestError } = await supabase.functions.invoke('select-best-titles', {
+        body: {
+          titles: allSuggestions,
+          roughTopic: generatedTopic,
+          businessContext: businessContext,
+        },
+      });
+
+      if (bestError) throw bestError;
+      if (bestData.error) throw new Error(bestData.error);
+
+      setBestTitles(bestData.best_titles || []);
       
       // Save the username to global state for use in Voice step
       onSetTwitterUsername(titleUsername.trim());
 
       toast({
-        title: 'Title ideas ready',
-        description: 'Click on a title to use it.',
+        title: 'Top 2 titles ready',
+        description: 'Pick your favorite.',
       });
     } catch (error: any) {
       console.error('Topic/title generation error:', error);
@@ -277,6 +304,7 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext, twitterUse
     } finally {
       setIsGeneratingTopic(false);
       setIsGeneratingTitles(false);
+      setIsSelectingBest(false);
     }
   };
 
@@ -328,13 +356,13 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext, twitterUse
             />
             <Button
               onClick={handleGetTopicAndTitles}
-              disabled={isGeneratingTopic || isGeneratingTitles || !titleUsername.trim()}
+              disabled={isGeneratingTopic || isGeneratingTitles || isSelectingBest || !titleUsername.trim()}
               className="shrink-0 gradient-bg text-white hover:opacity-90"
             >
-              {isGeneratingTopic || isGeneratingTitles ? (
+              {isGeneratingTopic || isGeneratingTitles || isSelectingBest ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {isGeneratingTopic ? 'Finding topic...' : 'Generating titles...'}
+                  {isGeneratingTopic ? 'Finding topic...' : isGeneratingTitles ? 'Generating titles...' : 'Picking best 2...'}
                 </>
               ) : (
                 <>
@@ -353,22 +381,42 @@ const BusinessContextStep = ({ businessContext, onSetBusinessContext, twitterUse
             </div>
           )}
 
-          {/* Title Suggestions */}
-          {titleSuggestions.length > 0 && (
+          {/* Best 2 Titles - Primary Selection */}
+          {bestTitles.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Click to select:</p>
+              <p className="text-xs font-medium text-primary">🏆 Top 2 picks — click to select:</p>
               <div className="space-y-2">
-                {titleSuggestions.map((suggestion, index) => (
+                {bestTitles.map((suggestion, index) => (
                   <button
                     key={index}
                     onClick={() => handleSelectTitle(suggestion.title)}
-                    className="w-full text-left p-3 rounded-lg border border-border bg-background hover:bg-secondary/50 hover:border-primary/50 transition-colors group"
+                    className="w-full text-left p-3 rounded-lg border-2 border-primary/50 bg-primary/5 hover:bg-primary/10 hover:border-primary transition-colors group"
                   >
                     <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
                       {suggestion.title}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {suggestion.angle}
+                      {suggestion.reason}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* All Title Suggestions - Secondary */}
+          {titleSuggestions.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">All generated titles:</p>
+              <div className="space-y-1">
+                {titleSuggestions.map((suggestion, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSelectTitle(suggestion.title)}
+                    className="w-full text-left p-2 rounded-lg border border-border bg-background hover:bg-secondary/50 hover:border-primary/30 transition-colors group text-xs"
+                  >
+                    <p className="font-medium text-foreground/80 group-hover:text-foreground transition-colors">
+                      {suggestion.title}
                     </p>
                   </button>
                 ))}
