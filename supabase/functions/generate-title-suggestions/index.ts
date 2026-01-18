@@ -99,7 +99,7 @@ Generate 5 diverse titles using different angles (curiosity, contrarian, results
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-opus-4-20250514',
         max_tokens: 1024,
         system: systemPrompt,
         messages: [
