@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.generate-topic-idea]
 verify_jwt = false
+
+[functions.select-best-titles]
+verify_jwt = false
