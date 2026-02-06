@@ -1,54 +1,110 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Sparkles, Loader2, Search, FileText, PenTool, Wand2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import WizardProgress from '@/components/wizard/WizardProgress';
 import BusinessContextStep from '@/components/wizard/steps/BusinessContextStep';
 import VoiceDataStep from '@/components/wizard/steps/VoiceDataStep';
 import ReviewStep from '@/components/wizard/steps/ReviewStep';
+import StageCheckpoint from '@/components/pipeline/StageCheckpoint';
+import PipelineProgress from '@/components/pipeline/PipelineProgress';
 import { useScriptWizard } from '@/hooks/useScriptWizard';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-const stepLabels = [
-  'Business Context',
-  'Voice',
-  'Review',
+const stepLabels = ['Business Context', 'Voice', 'Review'];
+
+const PIPELINE_STAGES = [
+  { name: 'rag', label: 'RAG' },
+  { name: 'research', label: 'Research' },
+  { name: 'claims', label: 'Claims' },
+  { name: 'alignment', label: 'Alignment' },
+  { name: 'tone', label: 'Tone' },
+  { name: 'structure', label: 'Structure' },
+  { name: 'writing', label: 'Writing' },
+  { name: 'polish', label: 'Polish' },
 ];
 
-type GenerationStage = 'idle' | 'research' | 'structure' | 'writing' | 'polish' | 'complete';
-
-const stageInfo: Record<GenerationStage, { label: string; icon: React.ReactNode; description: string }> = {
-  idle: { label: '', icon: null, description: '' },
-  research: { 
-    label: 'Researching', 
-    icon: <Search className="w-5 h-5" />, 
-    description: 'Finding sources, extracting claims, analyzing your voice...' 
-  },
-  structure: { 
-    label: 'Structuring', 
-    icon: <FileText className="w-5 h-5" />, 
-    description: 'Planning sections, mapping retention elements...' 
-  },
-  writing: { 
-    label: 'Writing', 
-    icon: <PenTool className="w-5 h-5" />, 
-    description: 'Crafting each section with your voice...' 
-  },
-  polish: { 
-    label: 'Polishing', 
-    icon: <Wand2 className="w-5 h-5" />, 
-    description: 'Final pass for flow and voice consistency...' 
-  },
-  complete: { label: 'Complete', icon: null, description: '' },
-};
+// Helpers to format stage output for display
+function formatStageOutput(stageName: string, data: any): string {
+  if (!data) return 'No output';
+  
+  switch (stageName) {
+    case 'rag': {
+      const r = data.rag_results || {};
+      const lines = ['=== RAG Retrieved Examples ===\n'];
+      lines.push(`Hooks: ${r.hooks?.length || 0}`);
+      r.hooks?.forEach((h: any, i: number) => lines.push(`  [${i+1}] (sim: ${h.similarity?.toFixed(2)}) ${h.content?.slice(0, 150)}...`));
+      lines.push(`\nBody Sections: ${r.body_sections?.length || 0}`);
+      r.body_sections?.forEach((b: any, i: number) => lines.push(`  [${i+1}] (sim: ${b.similarity?.toFixed(2)}) ${b.content?.slice(0, 150)}...`));
+      lines.push(`\nProof Sections: ${r.proof_sections?.length || 0}`);
+      r.proof_sections?.forEach((p: any, i: number) => lines.push(`  [${i+1}] ${p.content?.slice(0, 150)}...`));
+      lines.push(`\nObjection Handlers: ${r.objection_handlers?.length || 0}`);
+      r.objection_handlers?.forEach((o: any, i: number) => lines.push(`  [${i+1}] ${o.content?.slice(0, 150)}...`));
+      if (data.rag_examples_section) {
+        lines.push('\n--- RAG Examples Section (sent to later stages) ---\n');
+        lines.push(data.rag_examples_section);
+      }
+      return lines.join('\n');
+    }
+    case 'research': {
+      const rp = data.research_pack || {};
+      const lines = ['=== Research Results ===\n'];
+      lines.push(`Sources: ${rp.sources?.length || 0}`);
+      rp.sources?.forEach((s: any, i: number) => lines.push(`  [${i+1}] ${s.title} - ${s.url}`));
+      lines.push(`\nClaims: ${rp.claims?.length || 0}`);
+      rp.claims?.forEach((c: any, i: number) => lines.push(`  [${i+1}] (score: ${c.relevance_score}) ${c.claim}\n       Source: ${c.source_url}`));
+      return lines.join('\n');
+    }
+    case 'claims': {
+      const claims = data.claims || [];
+      const lines = ['=== Extracted Claims ===\n'];
+      claims.forEach((c: any, i: number) => lines.push(`[${i+1}] (score: ${c.relevance_score}) ${c.claim}\n    Source: ${c.source_url}\n`));
+      return lines.join('\n');
+    }
+    case 'alignment': {
+      const ac = data.aligned_claims || [];
+      const stats = data.alignment_stats || {};
+      const lines = [`=== Aligned Claims ===\nKept ${stats.filtered_claims_count || ac.length} of ${stats.original_claims_count || '?'} claims\n`];
+      ac.forEach((c: any, i: number) => lines.push(`[${i+1}] (score: ${c.relevance_score}) ${c.claim}\n    Source: ${c.source_url}\n`));
+      return lines.join('\n');
+    }
+    case 'tone': {
+      const ts = data.tone_summary || {};
+      const lines = ['=== Tone Summary ===\n'];
+      lines.push(`Voice: ${ts.one_sentence_voice}\n`);
+      if (ts.tone_rules?.length) { lines.push('Tone Rules:'); ts.tone_rules.forEach((r: string, i: number) => lines.push(`  ${i+1}. ${r}`)); lines.push(''); }
+      if (ts.writing_patterns?.length) { lines.push('Writing Patterns:'); ts.writing_patterns.forEach((p: string, i: number) => lines.push(`  ${i+1}. ${p}`)); lines.push(''); }
+      if (ts.dont_phrases?.length) { lines.push(`Don't Use: ${ts.dont_phrases.join(', ')}`); lines.push(''); }
+      if (ts.cadence_notes?.length) { lines.push('Cadence Notes:'); ts.cadence_notes.forEach((n: string) => lines.push(`  • ${n}`)); }
+      return lines.join('\n');
+    }
+    case 'structure': {
+      const s = data.structure || {};
+      return JSON.stringify(s, null, 2);
+    }
+    case 'writing':
+      return data.script || '';
+    case 'polish':
+      return data.script || '';
+    default:
+      return JSON.stringify(data, null, 2);
+  }
+}
 
 const CreateScript = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationStage, setGenerationStage] = useState<GenerationStage>('idle');
+  const [isRerunning, setIsRerunning] = useState(false);
+  
+  // Pipeline state
+  const [pipelineActive, setPipelineActive] = useState(false);
+  const [currentPipelineStage, setCurrentPipelineStage] = useState(-1); // -1 = not started
+  const [stageOutputs, setStageOutputs] = useState<Record<string, any>>({});
+  const [stageDisplayOutputs, setStageDisplayOutputs] = useState<Record<string, string>>({});
+  const [waitingForApproval, setWaitingForApproval] = useState(false);
   
   const {
     currentStep,
@@ -64,99 +120,216 @@ const CreateScript = () => {
     goToStep,
   } = useScriptWizard();
 
-  const handleGenerate = async () => {
-    setIsGenerating(true);
-    setGenerationStage('research');
+  // Run a single pipeline stage
+  const runStage = useCallback(async (stageIndex: number, userModifications?: string) => {
+    const stageName = PIPELINE_STAGES[stageIndex].name;
+    setCurrentPipelineStage(stageIndex);
+    setWaitingForApproval(false);
+    setIsRerunning(stageIndex > 0 && !!userModifications);
     
     try {
-      // Stage 1-3: Research, Alignment, Tone, RAG
-      const { data: prepData, error: prepError } = await supabase.functions.invoke('generate-script-v3', {
-        body: {
-          topic: businessContext.video_title,
-          context_profile: businessContext,
-          tweets: voiceData.tweet_examples,
-          constraints: {
-            tone_goals: voiceData.tone_goals,
-            dont_phrases: voiceData.dont_phrases,
+      let data: any;
+
+      if (stageName === 'rag') {
+        const { data: d, error } = await supabase.functions.invoke('generate-script-v3', {
+          body: {
+            stage: 'rag',
+            topic: businessContext.video_title,
+            context_profile: businessContext,
           },
-        },
-      });
+        });
+        if (error) throw error;
+        data = d;
+      } else if (stageName === 'research') {
+        const { data: d, error } = await supabase.functions.invoke('generate-script-v3', {
+          body: {
+            stage: 'research',
+            topic: businessContext.video_title,
+            context_profile: businessContext,
+          },
+        });
+        if (error) throw error;
+        data = d;
+      } else if (stageName === 'claims') {
+        // Claims come from research; user can modify
+        const researchData = stageOutputs['research'];
+        data = {
+          claims: researchData?.research_pack?.claims || [],
+        };
+      } else if (stageName === 'alignment') {
+        const claimsData = stageOutputs['claims'];
+        const researchData = stageOutputs['research'];
+        const { data: d, error } = await supabase.functions.invoke('generate-script-v3', {
+          body: {
+            stage: 'alignment',
+            topic: businessContext.video_title,
+            context_profile: businessContext,
+            research_pack: {
+              sources: researchData?.research_pack?.sources || [],
+              claims: claimsData?.claims || [],
+            },
+          },
+        });
+        if (error) throw error;
+        data = d;
+      } else if (stageName === 'tone') {
+        const { data: d, error } = await supabase.functions.invoke('generate-script-v3', {
+          body: {
+            stage: 'tone',
+            topic: businessContext.video_title,
+            context_profile: businessContext,
+            tweets: voiceData.tweet_examples,
+          },
+        });
+        if (error) throw error;
+        data = d;
+      } else if (stageName === 'structure') {
+        const alignmentData = stageOutputs['alignment'];
+        const ragData = stageOutputs['rag'];
+        const { data: d, error } = await supabase.functions.invoke('script-structure', {
+          body: {
+            topic: businessContext.video_title,
+            context_profile: businessContext,
+            aligned_claims: alignmentData?.aligned_claims || [],
+            target_length: 10,
+            rag_examples_section: ragData?.rag_examples_section || '',
+          },
+        });
+        if (error) throw error;
+        data = d;
+      } else if (stageName === 'writing') {
+        const structureData = stageOutputs['structure'];
+        const toneData = stageOutputs['tone'];
+        const alignmentData = stageOutputs['alignment'];
+        const ragData = stageOutputs['rag'];
+        const { data: d, error } = await supabase.functions.invoke('script-write', {
+          body: {
+            structure: structureData?.structure,
+            topic: businessContext.video_title,
+            context_profile: businessContext,
+            tone_summary: toneData?.tone_summary,
+            aligned_claims: alignmentData?.aligned_claims || [],
+            rag_examples_section: ragData?.rag_examples_section || '',
+          },
+        });
+        if (error) throw error;
+        data = d;
+      } else if (stageName === 'polish') {
+        const writeData = stageOutputs['writing'];
+        const toneData = stageOutputs['tone'];
+        const alignmentData = stageOutputs['alignment'];
+        const ragData = stageOutputs['rag'];
+        const { data: d, error } = await supabase.functions.invoke('script-polish', {
+          body: {
+            script: writeData?.script,
+            tone_summary: toneData?.tone_summary,
+            aligned_claims: alignmentData?.aligned_claims || [],
+            rag_results: ragData?.rag_results,
+          },
+        });
+        if (error) throw error;
+        data = d;
+      }
 
-      if (prepError) throw prepError;
-      console.log('Prep stages complete:', prepData);
+      // Store raw data and formatted display
+      setStageOutputs(prev => ({ ...prev, [stageName]: data }));
+      setStageDisplayOutputs(prev => ({ ...prev, [stageName]: formatStageOutput(stageName, data) }));
+      setWaitingForApproval(true);
+      setIsRerunning(false);
 
-      // Stage 4A: Structure
-      setGenerationStage('structure');
-      const { data: structureData, error: structureError } = await supabase.functions.invoke('script-structure', {
-        body: {
-          topic: prepData.topic,
-          context_profile: prepData.context_profile,
-          aligned_claims: prepData.aligned_claims,
-          target_length: prepData.target_length,
-          rag_examples_section: prepData.rag_examples_section,
-        },
-      });
-
-      if (structureError) throw structureError;
-      console.log('Structure complete:', structureData);
-
-      // Stage 4B: Writing
-      setGenerationStage('writing');
-      const { data: writeData, error: writeError } = await supabase.functions.invoke('script-write', {
-        body: {
-          structure: structureData.structure,
-          topic: prepData.topic,
-          context_profile: prepData.context_profile,
-          tone_summary: prepData.tone_summary,
-          aligned_claims: prepData.aligned_claims,
-          rag_examples_section: prepData.rag_examples_section,
-        },
-      });
-
-      if (writeError) throw writeError;
-      console.log('Writing complete:', writeData);
-
-      // Stage 4C: Polish
-      setGenerationStage('polish');
-      const { data: polishData, error: polishError } = await supabase.functions.invoke('script-polish', {
-        body: {
-          script: writeData.script,
-          tone_summary: prepData.tone_summary,
-          aligned_claims: prepData.aligned_claims,
-          rag_results: prepData.rag_results,
-        },
-      });
-
-      if (polishError) throw polishError;
-      console.log('Polish complete:', polishData);
-
-      setGenerationStage('complete');
-
-      navigate('/script', { 
-        state: { 
-          script: polishData.script, 
-          contextProfile: businessContext,
-          businessContext,
-          voiceData,
-          researchPack: prepData.research_pack,
-          alignmentChecklist: prepData.alignment_stats,
-          toneSummary: prepData.tone_summary,
-          contextUseLog: polishData.context_use_log,
-          retentionElements: polishData.retention_elements,
-          validation: { passed: true, issues: [] },
-        } 
-      });
     } catch (error: any) {
-      console.error('Generation error:', error);
+      console.error(`Stage ${stageName} error:`, error);
       toast({
-        title: 'Generation failed',
+        title: `Stage ${stageIndex}: ${PIPELINE_STAGES[stageIndex].label} failed`,
         description: error.message || 'Please try again.',
         variant: 'destructive',
       });
-      setIsGenerating(false);
-      setGenerationStage('idle');
+      setIsRerunning(false);
+      setWaitingForApproval(false);
     }
+  }, [businessContext, voiceData, stageOutputs, toast]);
+
+  // Start pipeline
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    setPipelineActive(true);
+    setStageOutputs({});
+    setStageDisplayOutputs({});
+    await runStage(0);
+    setIsGenerating(false);
   };
+
+  // Approve current stage and move to next
+  const handleApproveStage = useCallback(async () => {
+    const nextStageIndex = currentPipelineStage + 1;
+    
+    if (nextStageIndex >= PIPELINE_STAGES.length) {
+      // All stages complete - navigate to result
+      const polishData = stageOutputs['polish'];
+      const researchData = stageOutputs['research'];
+      const alignmentData = stageOutputs['alignment'];
+      const toneData = stageOutputs['tone'];
+      
+      navigate('/script', {
+        state: {
+          script: polishData?.script,
+          businessContext,
+          voiceData,
+          researchPack: researchData?.research_pack,
+          alignmentChecklist: alignmentData?.alignment_stats,
+          toneSummary: toneData?.tone_summary,
+          contextUseLog: polishData?.context_use_log,
+          retentionElements: polishData?.retention_elements,
+          validation: { passed: true, issues: [] },
+        },
+      });
+      return;
+    }
+
+    await runStage(nextStageIndex);
+  }, [currentPipelineStage, stageOutputs, businessContext, voiceData, navigate, runStage]);
+
+  // Re-run current stage with feedback
+  const handleRerunStage = useCallback(async (feedback: string) => {
+    // For now, re-run the same stage (the AI model will produce different output)
+    // TODO: Pass feedback to the model for refinement
+    await runStage(currentPipelineStage, feedback);
+  }, [currentPipelineStage, runStage]);
+
+  // Handle manual text edits to stage output
+  const handleEditOutput = useCallback((stageName: string, editedText: string) => {
+    setStageDisplayOutputs(prev => ({ ...prev, [stageName]: editedText }));
+    
+    // Also update raw data for stages that pass data forward
+    const currentData = stageOutputs[stageName];
+    if (stageName === 'claims') {
+      // Try to parse edited claims back
+      try {
+        const lines = editedText.split('\n').filter(l => l.match(/^\[/));
+        const claims = lines.map(line => {
+          const claimMatch = line.match(/\]\s*\(score:\s*(\d+)\)\s*(.*)/);
+          const sourceMatch = editedText.split('\n').find(l => l.trim().startsWith('Source:'));
+          return {
+            claim: claimMatch?.[2] || line,
+            relevance_score: parseInt(claimMatch?.[1] || '5'),
+            source_url: sourceMatch?.replace('Source:', '').trim() || '',
+          };
+        });
+        if (claims.length > 0) {
+          setStageOutputs(prev => ({ ...prev, claims: { claims } }));
+        }
+      } catch { /* keep original data */ }
+    } else if (stageName === 'writing') {
+      setStageOutputs(prev => ({ ...prev, writing: { ...currentData, script: editedText } }));
+    } else if (stageName === 'polish') {
+      setStageOutputs(prev => ({ ...prev, polish: { ...currentData, script: editedText } }));
+    } else if (stageName === 'structure') {
+      try {
+        const parsed = JSON.parse(editedText);
+        setStageOutputs(prev => ({ ...prev, structure: { structure: parsed } }));
+      } catch { /* keep original data */ }
+    }
+  }, [stageOutputs]);
 
   const renderStep = () => {
     switch (currentStep) {
@@ -178,59 +351,53 @@ const CreateScript = () => {
     }
   };
 
-  const renderGenerationProgress = () => {
-    const stages: GenerationStage[] = ['research', 'structure', 'writing', 'polish'];
-    const currentIndex = stages.indexOf(generationStage);
-
+  const renderPipeline = () => {
+    const currentStageName = currentPipelineStage >= 0 ? PIPELINE_STAGES[currentPipelineStage].name : '';
+    
     return (
       <div className="space-y-6">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-            {stageInfo[generationStage].icon}
-          </div>
-          <h3 className="text-xl font-semibold text-foreground mb-2">
-            {stageInfo[generationStage].label}...
-          </h3>
-          <p className="text-muted-foreground">
-            {stageInfo[generationStage].description}
-          </p>
-        </div>
+        {/* Pipeline progress bar */}
+        <PipelineProgress currentStage={currentPipelineStage} stages={PIPELINE_STAGES} />
 
-        <div className="flex items-center justify-center gap-2">
-          {stages.map((stage, index) => (
-            <div key={stage} className="flex items-center">
-              <div
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  index < currentIndex
-                    ? 'bg-primary'
-                    : index === currentIndex
-                    ? 'bg-primary animate-pulse'
-                    : 'bg-muted'
-                }`}
-              />
-              {index < stages.length - 1 && (
-                <div
-                  className={`w-8 h-0.5 transition-all duration-300 ${
-                    index < currentIndex ? 'bg-primary' : 'bg-muted'
-                  }`}
-                />
-              )}
-            </div>
-          ))}
-        </div>
+        {/* Completed stages (collapsed) */}
+        {PIPELINE_STAGES.map((stage, index) => {
+          if (index > currentPipelineStage) return null;
+          const isCurrentStage = index === currentPipelineStage;
+          const displayOutput = stageDisplayOutputs[stage.name];
 
-        <div className="flex justify-center gap-4 text-xs text-muted-foreground">
-          {stages.map((stage, index) => (
-            <span
-              key={stage}
-              className={`transition-colors ${
-                index <= currentIndex ? 'text-foreground' : ''
-              }`}
-            >
-              {stageInfo[stage].label}
-            </span>
-          ))}
-        </div>
+          if (!displayOutput) {
+            // Stage is running
+            if (isCurrentStage && !waitingForApproval) {
+              return (
+                <div key={stage.name} className="border border-border rounded-xl p-6 bg-card/50 flex flex-col items-center justify-center gap-4">
+                  <div className="w-12 h-12 rounded-full gradient-bg flex items-center justify-center glow-orange">
+                    <Loader2 className="w-6 h-6 text-white animate-spin" />
+                  </div>
+                  <div className="text-center">
+                    <h3 className="text-lg font-semibold text-foreground">
+                      Running Stage {index}: {stage.label}...
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">This may take a moment</p>
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          }
+
+          return (
+            <StageCheckpoint
+              key={stage.name}
+              stageName={`Stage ${index}: ${stage.label}`}
+              stageNumber={index}
+              output={displayOutput}
+              onApprove={handleApproveStage}
+              onRerun={(feedback) => handleRerunStage(feedback)}
+              onEditOutput={(edited) => handleEditOutput(stage.name, edited)}
+              isRerunning={isRerunning && isCurrentStage}
+            />
+          );
+        })}
       </div>
     );
   };
@@ -244,16 +411,16 @@ const CreateScript = () => {
       </div>
 
       <main className="relative pt-32 pb-20 px-6">
-        <div className="max-w-2xl mx-auto">
-          {!isGenerating && (
+        <div className={pipelineActive ? 'max-w-4xl mx-auto' : 'max-w-2xl mx-auto'}>
+          {!pipelineActive && (
             <WizardProgress currentStep={currentStep} totalSteps={totalSteps} stepLabels={stepLabels} />
           )}
 
-          <div className="bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-6 sm:p-8 mb-8 max-h-[60vh] overflow-y-auto">
-            {isGenerating ? renderGenerationProgress() : renderStep()}
+          <div className={`bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-6 sm:p-8 mb-8 ${pipelineActive ? '' : 'max-h-[60vh] overflow-y-auto'}`}>
+            {pipelineActive ? renderPipeline() : renderStep()}
           </div>
 
-          {!isGenerating && (
+          {!pipelineActive && (
             <div className="flex items-center justify-between">
               <Button
                 variant="outline"
