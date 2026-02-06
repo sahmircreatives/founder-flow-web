@@ -411,7 +411,7 @@ async function runToneDistillationStage(tweets: string): Promise<ToneSummary> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-opus-4-5-20251101",
+        model: "claude-opus-4-6",
         max_tokens: 2000,
         messages: [
           {
