@@ -222,7 +222,7 @@ async function extractClaimsFromResearch(researchContent: string, citations: str
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-opus-4-5-20251101",
+        model: "claude-opus-4-6",
         max_tokens: 2000,
         messages: [
           {
