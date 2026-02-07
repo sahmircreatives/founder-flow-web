@@ -3,15 +3,17 @@ import { Check, Loader2 } from 'lucide-react';
 interface PipelineProgressProps {
   currentStage: number;
   stages: { name: string; label: string }[];
+  waitingForApproval?: boolean;
 }
 
-const PipelineProgress = ({ currentStage, stages }: PipelineProgressProps) => {
+const PipelineProgress = ({ currentStage, stages, waitingForApproval }: PipelineProgressProps) => {
   return (
     <div className="flex items-center gap-1 overflow-x-auto pb-2">
       {stages.map((stage, index) => {
         const isComplete = index < currentStage;
         const isCurrent = index === currentStage;
         const isFuture = index > currentStage;
+        const isWaiting = isCurrent && waitingForApproval;
 
         return (
           <div key={stage.name} className="flex items-center">
@@ -20,12 +22,14 @@ const PipelineProgress = ({ currentStage, stages }: PipelineProgressProps) => {
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                   isComplete
                     ? 'bg-primary text-primary-foreground'
+                    : isWaiting
+                    ? 'bg-primary text-primary-foreground'
                     : isCurrent
                     ? 'gradient-bg text-white animate-pulse'
                     : 'bg-muted text-muted-foreground'
                 }`}
               >
-                {isComplete ? <Check className="w-3.5 h-3.5" /> : isCurrent ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : index}
+                {isComplete || isWaiting ? <Check className="w-3.5 h-3.5" /> : isCurrent ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : index}
               </div>
               <span
                 className={`text-[10px] mt-1 text-center leading-tight ${

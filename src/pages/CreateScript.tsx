@@ -357,7 +357,7 @@ const CreateScript = () => {
     return (
       <div className="space-y-6">
         {/* Pipeline progress bar */}
-        <PipelineProgress currentStage={currentPipelineStage} stages={PIPELINE_STAGES} />
+        <PipelineProgress currentStage={currentPipelineStage} stages={PIPELINE_STAGES} waitingForApproval={waitingForApproval} />
 
         {/* Completed stages (collapsed) */}
         {PIPELINE_STAGES.map((stage, index) => {
