@@ -7,8 +7,9 @@ import WizardProgress from '@/components/wizard/WizardProgress';
 import BusinessContextStep from '@/components/wizard/steps/BusinessContextStep';
 import VoiceDataStep from '@/components/wizard/steps/VoiceDataStep';
 import ReviewStep from '@/components/wizard/steps/ReviewStep';
-import StageCheckpoint from '@/components/pipeline/StageCheckpoint';
-import PipelineProgress from '@/components/pipeline/PipelineProgress';
+import ChatPipeline from '@/components/pipeline/ChatPipeline';
+import FinalEditor from '@/components/pipeline/FinalEditor';
+import { ChatMessageData } from '@/components/pipeline/ChatMessage';
 import { useScriptWizard } from '@/hooks/useScriptWizard';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +25,7 @@ const PIPELINE_STAGES = [
   { name: 'structure', label: 'Structure' },
   { name: 'writing', label: 'Writing' },
   { name: 'polish', label: 'Polish' },
+  { name: 'editor', label: 'Editor' },
 ];
 
 // Helpers to format stage output for display
@@ -101,10 +103,12 @@ const CreateScript = () => {
   
   // Pipeline state
   const [pipelineActive, setPipelineActive] = useState(false);
-  const [currentPipelineStage, setCurrentPipelineStage] = useState(-1); // -1 = not started
+  const [currentPipelineStage, setCurrentPipelineStage] = useState(-1);
   const [stageOutputs, setStageOutputs] = useState<Record<string, any>>({});
   const [stageDisplayOutputs, setStageDisplayOutputs] = useState<Record<string, string>>({});
   const [waitingForApproval, setWaitingForApproval] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessageData[]>([]);
+  const [showFinalEditor, setShowFinalEditor] = useState(false);
   
   const {
     currentStep,
@@ -120,12 +124,44 @@ const CreateScript = () => {
     goToStep,
   } = useScriptWizard();
 
+  // Add a chat message
+  const addMessage = useCallback((msg: Omit<ChatMessageData, 'id'>) => {
+    const newMsg: ChatMessageData = { ...msg, id: `msg-${Date.now()}-${Math.random().toString(36).slice(2)}` };
+    setChatMessages(prev => [...prev, newMsg]);
+    return newMsg.id;
+  }, []);
+
   // Run a single pipeline stage
   const runStage = useCallback(async (stageIndex: number, userModifications?: string) => {
     const stageName = PIPELINE_STAGES[stageIndex].name;
+
+    // If this is the editor stage, switch to final editor view
+    if (stageName === 'editor') {
+      setCurrentPipelineStage(stageIndex);
+      setShowFinalEditor(true);
+      setWaitingForApproval(false);
+      addMessage({
+        role: 'assistant',
+        stageName: `Stage ${stageIndex}: Editor`,
+        stageNumber: stageIndex,
+        content: 'Your script is ready! Use the editor to make final refinements with Opus 4.6.',
+        type: 'status',
+      });
+      return;
+    }
+
     setCurrentPipelineStage(stageIndex);
     setWaitingForApproval(false);
     setIsRerunning(stageIndex > 0 && !!userModifications);
+    
+    // Add user feedback message if re-running
+    if (userModifications) {
+      addMessage({
+        role: 'user',
+        content: userModifications,
+        type: 'feedback',
+      });
+    }
     
     try {
       let data: any;
@@ -151,7 +187,6 @@ const CreateScript = () => {
         if (error) throw error;
         data = d;
       } else if (stageName === 'claims') {
-        // Claims come from research; user can modify
         const researchData = stageOutputs['research'];
         data = {
           claims: researchData?.research_pack?.claims || [],
@@ -232,10 +267,20 @@ const CreateScript = () => {
       }
 
       // Store raw data and formatted display
+      const formattedOutput = formatStageOutput(stageName, data);
       setStageOutputs(prev => ({ ...prev, [stageName]: data }));
-      setStageDisplayOutputs(prev => ({ ...prev, [stageName]: formatStageOutput(stageName, data) }));
+      setStageDisplayOutputs(prev => ({ ...prev, [stageName]: formattedOutput }));
       setWaitingForApproval(true);
       setIsRerunning(false);
+
+      // Add stage output as chat message
+      addMessage({
+        role: 'assistant',
+        stageName: `Stage ${stageIndex}: ${PIPELINE_STAGES[stageIndex].label}`,
+        stageNumber: stageIndex,
+        content: formattedOutput,
+        type: 'stage-output',
+      });
 
     } catch (error: any) {
       console.error(`Stage ${stageName} error:`, error);
@@ -246,8 +291,16 @@ const CreateScript = () => {
       });
       setIsRerunning(false);
       setWaitingForApproval(false);
+
+      addMessage({
+        role: 'assistant',
+        stageName: `Stage ${stageIndex}: ${PIPELINE_STAGES[stageIndex].label}`,
+        stageNumber: stageIndex,
+        content: `❌ Error: ${error.message || 'Stage failed. Please try again.'}`,
+        type: 'stage-output',
+      });
     }
-  }, [businessContext, voiceData, stageOutputs, toast]);
+  }, [businessContext, voiceData, stageOutputs, toast, addMessage]);
 
   // Start pipeline
   const handleGenerate = async () => {
@@ -255,6 +308,8 @@ const CreateScript = () => {
     setPipelineActive(true);
     setStageOutputs({});
     setStageDisplayOutputs({});
+    setChatMessages([]);
+    setShowFinalEditor(false);
     await runStage(0);
     setIsGenerating(false);
   };
@@ -286,13 +341,18 @@ const CreateScript = () => {
       return;
     }
 
+    // Add approval status message
+    addMessage({
+      role: 'system',
+      content: `✓ Stage ${currentPipelineStage} approved`,
+      type: 'status',
+    });
+
     await runStage(nextStageIndex);
-  }, [currentPipelineStage, stageOutputs, businessContext, voiceData, navigate, runStage]);
+  }, [currentPipelineStage, stageOutputs, businessContext, voiceData, navigate, runStage, addMessage]);
 
   // Re-run current stage with feedback
   const handleRerunStage = useCallback(async (feedback: string) => {
-    // For now, re-run the same stage (the AI model will produce different output)
-    // TODO: Pass feedback to the model for refinement
     await runStage(currentPipelineStage, feedback);
   }, [currentPipelineStage, runStage]);
 
@@ -300,10 +360,8 @@ const CreateScript = () => {
   const handleEditOutput = useCallback((stageName: string, editedText: string) => {
     setStageDisplayOutputs(prev => ({ ...prev, [stageName]: editedText }));
     
-    // Also update raw data for stages that pass data forward
     const currentData = stageOutputs[stageName];
     if (stageName === 'claims') {
-      // Try to parse edited claims back
       try {
         const lines = editedText.split('\n').filter(l => l.match(/^\[/));
         const claims = lines.map(line => {
@@ -331,6 +389,14 @@ const CreateScript = () => {
     }
   }, [stageOutputs]);
 
+  // Handle final editor script updates
+  const handleFinalScriptUpdate = useCallback((updatedScript: string) => {
+    setStageOutputs(prev => ({
+      ...prev,
+      polish: { ...prev.polish, script: updatedScript },
+    }));
+  }, []);
+
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -352,53 +418,30 @@ const CreateScript = () => {
   };
 
   const renderPipeline = () => {
-    const currentStageName = currentPipelineStage >= 0 ? PIPELINE_STAGES[currentPipelineStage].name : '';
-    
+    if (showFinalEditor) {
+      const polishData = stageOutputs['polish'];
+      return (
+        <FinalEditor
+          initialScript={polishData?.script || ''}
+          businessContext={businessContext}
+          onScriptUpdate={handleFinalScriptUpdate}
+        />
+      );
+    }
+
+    const isRunning = currentPipelineStage >= 0 && !waitingForApproval;
+
     return (
-      <div className="space-y-6">
-        {/* Pipeline progress bar */}
-        <PipelineProgress currentStage={currentPipelineStage} stages={PIPELINE_STAGES} waitingForApproval={waitingForApproval} />
-
-        {/* Completed stages (collapsed) */}
-        {PIPELINE_STAGES.map((stage, index) => {
-          if (index > currentPipelineStage) return null;
-          const isCurrentStage = index === currentPipelineStage;
-          const displayOutput = stageDisplayOutputs[stage.name];
-
-          if (!displayOutput) {
-            // Stage is running
-            if (isCurrentStage && !waitingForApproval) {
-              return (
-                <div key={stage.name} className="border border-border rounded-xl p-6 bg-card/50 flex flex-col items-center justify-center gap-4">
-                  <div className="w-12 h-12 rounded-full gradient-bg flex items-center justify-center glow-orange">
-                    <Loader2 className="w-6 h-6 text-white animate-spin" />
-                  </div>
-                  <div className="text-center">
-                    <h3 className="text-lg font-semibold text-foreground">
-                      Running Stage {index}: {stage.label}...
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1">This may take a moment</p>
-                  </div>
-                </div>
-              );
-            }
-            return null;
-          }
-
-          return (
-            <StageCheckpoint
-              key={stage.name}
-              stageName={`Stage ${index}: ${stage.label}`}
-              stageNumber={index}
-              output={displayOutput}
-              onApprove={handleApproveStage}
-              onRerun={(feedback) => handleRerunStage(feedback)}
-              onEditOutput={(edited) => handleEditOutput(stage.name, edited)}
-              isRerunning={isRerunning && isCurrentStage}
-            />
-          );
-        })}
-      </div>
+      <ChatPipeline
+        messages={chatMessages}
+        currentStage={currentPipelineStage}
+        stages={PIPELINE_STAGES}
+        waitingForApproval={waitingForApproval}
+        isRunning={isRunning}
+        onApprove={handleApproveStage}
+        onRerun={handleRerunStage}
+        onEditOutput={handleEditOutput}
+      />
     );
   };
 
@@ -411,12 +454,12 @@ const CreateScript = () => {
       </div>
 
       <main className="relative pt-32 pb-20 px-6">
-        <div className={pipelineActive ? 'max-w-4xl mx-auto' : 'max-w-2xl mx-auto'}>
+        <div className={pipelineActive ? 'max-w-5xl mx-auto' : 'max-w-2xl mx-auto'}>
           {!pipelineActive && (
             <WizardProgress currentStep={currentStep} totalSteps={totalSteps} stepLabels={stepLabels} />
           )}
 
-          <div className={`bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-6 sm:p-8 mb-8 ${pipelineActive ? '' : 'max-h-[60vh] overflow-y-auto'}`}>
+          <div className={`${pipelineActive ? '' : 'bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-6 sm:p-8 mb-8 max-h-[60vh] overflow-y-auto'}`}>
             {pipelineActive ? renderPipeline() : renderStep()}
           </div>
 
@@ -432,7 +475,7 @@ const CreateScript = () => {
               </Button>
 
               {currentStep < totalSteps ? (
-                <Button onClick={nextStep} className="gradient-bg text-white hover:opacity-90">
+                <Button onClick={nextStep} className="gradient-bg text-primary-foreground hover:opacity-90">
                   Continue
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -440,7 +483,7 @@ const CreateScript = () => {
                 <Button
                   onClick={handleGenerate}
                   disabled={isGenerating}
-                  className="gradient-bg text-white hover:opacity-90 glow-orange px-8"
+                  className="gradient-bg text-primary-foreground hover:opacity-90 glow-orange px-8"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
                   Generate Script

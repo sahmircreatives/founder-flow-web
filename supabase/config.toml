@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.select-best-titles]
 verify_jwt = false
+
+[functions.script-editor-chat]
+verify_jwt = false
