@@ -100,6 +100,7 @@ const CreateScript = () => {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRerunning, setIsRerunning] = useState(false);
+  const [interactiveMode, setInteractiveMode] = useState(true);
   
   // Pipeline state
   const [pipelineActive, setPipelineActive] = useState(false);
