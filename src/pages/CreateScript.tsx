@@ -551,7 +551,7 @@ const CreateScript = () => {
       case 2:
         return <VoiceDataStep data={voiceData} onUpdate={updateVoiceData} twitterUsername={twitterUsername} />;
       case 3:
-        return <ReviewStep businessContext={businessContext} voiceData={voiceData} onEditStep={goToStep} />;
+        return <ReviewStep businessContext={businessContext} voiceData={voiceData} onEditStep={goToStep} interactiveMode={interactiveMode} onInteractiveModeChange={setInteractiveMode} />;
       default:
         return null;
     }
