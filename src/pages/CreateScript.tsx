@@ -100,6 +100,7 @@ const CreateScript = () => {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRerunning, setIsRerunning] = useState(false);
+  const [interactiveMode, setInteractiveMode] = useState(true);
   
   // Pipeline state
   const [pipelineActive, setPipelineActive] = useState(false);
@@ -310,8 +311,147 @@ const CreateScript = () => {
     setStageDisplayOutputs({});
     setChatMessages([]);
     setShowFinalEditor(false);
-    await runStage(0);
+
+    if (interactiveMode) {
+      await runStage(0);
+    } else {
+      // Auto mode: run all stages sequentially without pausing
+      await runAutoMode();
+    }
     setIsGenerating(false);
+  };
+
+  // Auto mode: run all stages without waiting for approval
+  const runAutoMode = async () => {
+    let outputs: Record<string, any> = {};
+    
+    for (let i = 0; i < PIPELINE_STAGES.length; i++) {
+      const stageName = PIPELINE_STAGES[i].name;
+      
+      if (stageName === 'editor') {
+        setCurrentPipelineStage(i);
+        setShowFinalEditor(true);
+        addMessage({
+          role: 'assistant',
+          stageName: `Stage ${i}: Editor`,
+          stageNumber: i,
+          content: 'Your script is ready! Use the editor to make final refinements with Opus 4.6.',
+          type: 'status',
+        });
+        return;
+      }
+
+      setCurrentPipelineStage(i);
+      addMessage({
+        role: 'system',
+        content: `⏳ Running Stage ${i}: ${PIPELINE_STAGES[i].label}...`,
+        type: 'status',
+      });
+
+      try {
+        let data: any;
+
+        if (stageName === 'rag') {
+          const { data: d, error } = await supabase.functions.invoke('generate-script-v3', {
+            body: { stage: 'rag', topic: businessContext.video_title, context_profile: businessContext },
+          });
+          if (error) throw error;
+          data = d;
+        } else if (stageName === 'research') {
+          const { data: d, error } = await supabase.functions.invoke('generate-script-v3', {
+            body: { stage: 'research', topic: businessContext.video_title, context_profile: businessContext },
+          });
+          if (error) throw error;
+          data = d;
+        } else if (stageName === 'claims') {
+          const researchData = outputs['research'];
+          data = { claims: researchData?.research_pack?.claims || [] };
+        } else if (stageName === 'alignment') {
+          const claimsData = outputs['claims'];
+          const researchData = outputs['research'];
+          const { data: d, error } = await supabase.functions.invoke('generate-script-v3', {
+            body: {
+              stage: 'alignment', topic: businessContext.video_title, context_profile: businessContext,
+              research_pack: { sources: researchData?.research_pack?.sources || [], claims: claimsData?.claims || [] },
+            },
+          });
+          if (error) throw error;
+          data = d;
+        } else if (stageName === 'tone') {
+          const { data: d, error } = await supabase.functions.invoke('generate-script-v3', {
+            body: { stage: 'tone', topic: businessContext.video_title, context_profile: businessContext, tweets: voiceData.tweet_examples },
+          });
+          if (error) throw error;
+          data = d;
+        } else if (stageName === 'structure') {
+          const alignmentData = outputs['alignment'];
+          const ragData = outputs['rag'];
+          const { data: d, error } = await supabase.functions.invoke('script-structure', {
+            body: {
+              topic: businessContext.video_title, context_profile: businessContext,
+              aligned_claims: alignmentData?.aligned_claims || [], target_length: 10,
+              rag_examples_section: ragData?.rag_examples_section || '',
+            },
+          });
+          if (error) throw error;
+          data = d;
+        } else if (stageName === 'writing') {
+          const structureData = outputs['structure'];
+          const toneData = outputs['tone'];
+          const alignmentData = outputs['alignment'];
+          const ragData = outputs['rag'];
+          const { data: d, error } = await supabase.functions.invoke('script-write', {
+            body: {
+              structure: structureData?.structure, topic: businessContext.video_title,
+              context_profile: businessContext, tone_summary: toneData?.tone_summary,
+              aligned_claims: alignmentData?.aligned_claims || [],
+              rag_examples_section: ragData?.rag_examples_section || '',
+            },
+          });
+          if (error) throw error;
+          data = d;
+        } else if (stageName === 'polish') {
+          const writeData = outputs['writing'];
+          const toneData = outputs['tone'];
+          const alignmentData = outputs['alignment'];
+          const ragData = outputs['rag'];
+          const { data: d, error } = await supabase.functions.invoke('script-polish', {
+            body: {
+              script: writeData?.script, tone_summary: toneData?.tone_summary,
+              aligned_claims: alignmentData?.aligned_claims || [],
+              rag_results: ragData?.rag_results,
+            },
+          });
+          if (error) throw error;
+          data = d;
+        }
+
+        outputs[stageName] = data;
+        setStageOutputs(prev => ({ ...prev, [stageName]: data }));
+        const formattedOutput = formatStageOutput(stageName, data);
+        setStageDisplayOutputs(prev => ({ ...prev, [stageName]: formattedOutput }));
+
+        addMessage({
+          role: 'assistant',
+          stageName: `Stage ${i}: ${PIPELINE_STAGES[i].label}`,
+          stageNumber: i,
+          content: `✓ ${PIPELINE_STAGES[i].label} complete`,
+          type: 'status',
+        });
+
+      } catch (error: any) {
+        console.error(`Stage ${stageName} error:`, error);
+        toast({ title: `Stage ${i} failed`, description: error.message, variant: 'destructive' });
+        addMessage({
+          role: 'assistant',
+          stageName: `Stage ${i}: ${PIPELINE_STAGES[i].label}`,
+          stageNumber: i,
+          content: `❌ Error: ${error.message || 'Stage failed.'}`,
+          type: 'stage-output',
+        });
+        return; // Stop auto mode on error
+      }
+    }
   };
 
   // Approve current stage and move to next
@@ -411,7 +551,7 @@ const CreateScript = () => {
       case 2:
         return <VoiceDataStep data={voiceData} onUpdate={updateVoiceData} twitterUsername={twitterUsername} />;
       case 3:
-        return <ReviewStep businessContext={businessContext} voiceData={voiceData} onEditStep={goToStep} />;
+        return <ReviewStep businessContext={businessContext} voiceData={voiceData} onEditStep={goToStep} interactiveMode={interactiveMode} onInteractiveModeChange={setInteractiveMode} />;
       default:
         return null;
     }

@@ -1,14 +1,18 @@
 import { BusinessContext, VoiceData } from '@/types/scriptGenerator';
-import { Check, Pencil } from 'lucide-react';
+import { Check, Pencil, Zap, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface ReviewStepProps {
   businessContext: BusinessContext;
   voiceData: VoiceData;
   onEditStep: (step: number) => void;
+  interactiveMode: boolean;
+  onInteractiveModeChange: (value: boolean) => void;
 }
 
-const ReviewStep = ({ businessContext, voiceData, onEditStep }: ReviewStepProps) => {
+const ReviewStep = ({ businessContext, voiceData, onEditStep, interactiveMode, onInteractiveModeChange }: ReviewStepProps) => {
   const business_context = businessContext?.business_context;
 
   const sections = [
@@ -89,10 +93,40 @@ const ReviewStep = ({ businessContext, voiceData, onEditStep }: ReviewStepProps)
         ))}
       </div>
 
+      {/* Mode Toggle */}
+      <div className="p-4 rounded-xl border border-border bg-secondary/20">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {interactiveMode ? (
+              <MessageSquare className="w-5 h-5 text-primary" />
+            ) : (
+              <Zap className="w-5 h-5 text-primary" />
+            )}
+            <div>
+              <Label htmlFor="interactive-mode" className="text-sm font-semibold text-foreground cursor-pointer">
+                {interactiveMode ? 'Interactive Mode' : 'Auto Mode'}
+              </Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {interactiveMode
+                  ? 'Review & edit each stage before continuing'
+                  : 'Run all stages automatically, edit at the end'}
+              </p>
+            </div>
+          </div>
+          <Switch
+            id="interactive-mode"
+            checked={interactiveMode}
+            onCheckedChange={onInteractiveModeChange}
+          />
+        </div>
+      </div>
+
       <div className="p-4 rounded-xl border border-primary/30 bg-primary/5">
         <p className="text-sm text-foreground">
           <strong>Ready to generate?</strong> Click the button below to create your high-retention YouTube script.
-          The AI will use all the information above to craft a personalized script matching your voice and audience.
+          {interactiveMode
+            ? ' You\'ll review each stage and can provide feedback before moving on.'
+            : ' The AI will run through all stages automatically.'}
         </p>
       </div>
     </div>
