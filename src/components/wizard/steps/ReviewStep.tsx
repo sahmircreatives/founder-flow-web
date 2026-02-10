@@ -1,14 +1,18 @@
 import { BusinessContext, VoiceData } from '@/types/scriptGenerator';
-import { Check, Pencil } from 'lucide-react';
+import { Check, Pencil, Zap, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface ReviewStepProps {
   businessContext: BusinessContext;
   voiceData: VoiceData;
   onEditStep: (step: number) => void;
+  interactiveMode: boolean;
+  onInteractiveModeChange: (value: boolean) => void;
 }
 
-const ReviewStep = ({ businessContext, voiceData, onEditStep }: ReviewStepProps) => {
+const ReviewStep = ({ businessContext, voiceData, onEditStep, interactiveMode, onInteractiveModeChange }: ReviewStepProps) => {
   const business_context = businessContext?.business_context;
 
   const sections = [
