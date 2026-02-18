@@ -420,7 +420,7 @@ const Features = () => {
         </div>
 
         {/* Full Team Section Header with Orbital Workers */}
-        <div className="relative max-w-3xl mx-auto text-center mb-16 py-8">
+        <div className="relative max-w-3xl mx-auto text-center mb-16 py-8 overflow-hidden">
           {/* Orbital Animation Container */}
           <div className="absolute inset-0 hidden md:flex items-center justify-center pointer-events-none" style={{ height: '280px', top: '50%', transform: 'translateY(-50%)' }}>
             {/* Orbit rings */}
