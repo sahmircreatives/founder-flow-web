@@ -1,5 +1,3 @@
-import { useEffect, useRef } from 'react';
-
 const people = [
   { name: 'Marcus Lee', role: 'YouTuber · 850K subs', initials: 'ML' },
   { name: 'Sarah Chen', role: 'Agency Owner', initials: 'SC' },
