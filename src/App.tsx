@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import CreateScript from "./pages/CreateScript";
 import ScriptResult from "./pages/ScriptResult";
 import RAGAdmin from "./pages/admin/RAGAdmin";
+import ConnectionsAdmin from "./pages/admin/ConnectionsAdmin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/create" element={<CreateScript />} />
           <Route path="/script" element={<ScriptResult />} />
           <Route path="/admin/rag" element={<RAGAdmin />} />
+          <Route path="/admin/connections" element={<ConnectionsAdmin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

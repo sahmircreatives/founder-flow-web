@@ -1,24 +1,44 @@
 import { useEffect, useRef, useState } from 'react';
+import { CheckCircle2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
-const people = [
-  { name: 'Marcus Lee', role: 'YouTuber · 850K subs', initials: 'ML' },
-  { name: 'Sarah Chen', role: 'Agency Owner', initials: 'SC' },
-  { name: 'Jake Morrison', role: 'Tech Channel · 1.2M', initials: 'JM' },
-  { name: 'Emily Rodriguez', role: 'Video Producer', initials: 'ER' },
-  { name: 'David Park', role: 'Course Creator · 420K', initials: 'DP' },
-  { name: 'Lisa Thompson', role: 'SaaS Marketing Lead', initials: 'LT' },
-  { name: 'Andre Walker', role: 'Finance YT · 680K', initials: 'AW' },
-  { name: 'Priya Shah', role: 'Lifestyle · 2.1M', initials: 'PS' },
-  { name: 'Noah Bennett', role: 'Gaming · 950K', initials: 'NB' },
-  { name: 'Maya Johnson', role: 'Education · 530K', initials: 'MJ' },
-];
+interface Person {
+  id: string;
+  name: string;
+  follower_count: string;
+  verified: boolean;
+  photo_url: string | null;
+}
+
+const initials = (name: string) =>
+  name
+    .split(' ')
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
 
 const ConnectedWith = () => {
   const rowRef = useRef<HTMLDivElement>(null);
   const [translateX, setTranslateX] = useState(0);
   const animRef = useRef<number>(0);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    supabase
+      .from('connected_with')
+      .select('id, name, follower_count, verified, photo_url')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        setPeople(data ?? []);
+        setLoaded(true);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!loaded || people.length === 0) return;
+
     let pos = 0;
     const speed = 0.8;
 
@@ -33,7 +53,9 @@ const ConnectedWith = () => {
 
     animRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animRef.current);
-  }, []);
+  }, [loaded, people.length]);
+
+  if (!loaded || people.length === 0) return null;
 
   return (
     <section id="connected" className="relative py-24 md:py-32 overflow-hidden">
@@ -59,19 +81,32 @@ const ConnectedWith = () => {
           >
             {[...people, ...people].map((p, i) => (
               <div
-                key={i}
+                key={`${p.id}-${i}`}
                 className="flex items-center gap-3 px-5 py-4 rounded-2xl border border-border bg-card/40 backdrop-blur-sm shrink-0 hover:border-primary/40 transition-colors"
                 style={{ minWidth: '280px' }}
               >
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center text-sm font-semibold text-foreground shrink-0">
-                  {p.initials}
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center text-sm font-semibold text-foreground shrink-0 overflow-hidden">
+                  {p.photo_url ? (
+                    <img
+                      src={p.photo_url}
+                      alt={p.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    initials(p.name)
+                  )}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground leading-tight truncate">
-                    {p.name}
-                  </p>
+                  <div className="flex items-center gap-1">
+                    <p className="text-sm font-semibold text-foreground leading-tight truncate">
+                      {p.name}
+                    </p>
+                    {p.verified && (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground leading-tight truncate">
-                    {p.role}
+                    {p.follower_count}
                   </p>
                 </div>
               </div>

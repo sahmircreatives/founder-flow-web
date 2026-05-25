@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      connected_with: {
+        Row: {
+          id: string
+          name: string
+          follower_count: string
+          verified: boolean
+          photo_url: string | null
+          display_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          follower_count?: string
+          verified?: boolean
+          photo_url?: string | null
+          display_order?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          follower_count?: string
+          verified?: boolean
+          photo_url?: string | null
+          display_order?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
       rag_body_sections: {
         Row: {
           content: string
