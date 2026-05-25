@@ -145,7 +145,7 @@ export default function RAGContentTable() {
 
       const { error } = await supabase
         .from(selectedTable as "rag_hooks" | "rag_body_sections" | "rag_cta_sections" | "rag_proof_sections" | "rag_objection_handlers")
-        .update(updateData)
+        .update(updateData as any)
         .eq("id", editItem.id);
 
       if (error) throw error;

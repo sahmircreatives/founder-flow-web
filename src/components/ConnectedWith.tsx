@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
 const people = [
   { name: 'Marcus Lee', role: 'YouTuber · 850K subs', initials: 'ML' },
   { name: 'Sarah Chen', role: 'Agency Owner', initials: 'SC' },
@@ -11,30 +14,16 @@ const people = [
   { name: 'Maya Johnson', role: 'Education · 530K', initials: 'MJ' },
 ];
 
-const Row = ({ reverse = false }: { reverse?: boolean }) => (
-  <div className="relative overflow-hidden mask-fade">
-    <div
-      className={`flex gap-4 w-max ${reverse ? 'animate-marquee-reverse' : 'animate-marquee'}`}
-    >
-      {[...people, ...people].map((p, i) => (
-        <div
-          key={i}
-          className="flex items-center gap-3 px-5 py-3 rounded-full border border-border bg-card/40 backdrop-blur-sm shrink-0 hover:border-primary/40 transition-colors"
-        >
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center text-sm font-semibold text-foreground">
-            {p.initials}
-          </div>
-          <div className="pr-2">
-            <p className="text-sm font-semibold text-foreground leading-tight">{p.name}</p>
-            <p className="text-xs text-muted-foreground leading-tight">{p.role}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
 const ConnectedWith = () => {
+  const [index, setIndex] = useState(0);
+  const visibleCount = 3;
+  const maxIndex = Math.max(0, people.length - visibleCount);
+
+  const prev = () => setIndex((i) => Math.max(0, i - 1));
+  const next = () => setIndex((i) => Math.min(maxIndex, i + 1));
+
+  const visible = people.slice(index, index + visibleCount);
+
   return (
     <section id="connected" className="relative py-24 md:py-32 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-background to-secondary/10" />
@@ -51,9 +40,57 @@ const ConnectedWith = () => {
           </p>
         </div>
 
-        <div className="space-y-4">
-          <Row />
-          <Row reverse />
+        <div className="relative max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {visible.map((p, i) => (
+              <div
+                key={`${index}-${i}`}
+                className="flex items-center gap-3 px-5 py-4 rounded-2xl border border-border bg-card/40 backdrop-blur-sm hover:border-primary/40 transition-colors"
+              >
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center text-sm font-semibold text-foreground shrink-0">
+                  {p.initials}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground leading-tight truncate">
+                    {p.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground leading-tight truncate">
+                    {p.role}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-center gap-3 mt-8">
+            <button
+              onClick={prev}
+              disabled={index === 0}
+              className="w-10 h-10 rounded-full border border-border bg-card/60 flex items-center justify-center text-foreground hover:bg-card disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            <div className="flex gap-1.5">
+              {Array.from({ length: maxIndex + 1 }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setIndex(i)}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    i === index ? 'bg-primary' : 'bg-border hover:bg-primary/40'
+                  }`}
+                />
+              ))}
+            </div>
+
+            <button
+              onClick={next}
+              disabled={index === maxIndex}
+              className="w-10 h-10 rounded-full border border-border bg-card/60 flex items-center justify-center text-foreground hover:bg-card disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
     </section>
