@@ -1,9 +1,121 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+function jsonError(message: string, code: string, status: number): Response {
+  return new Response(JSON.stringify({ error: message, code }), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function getClientIp(req: Request): string | null {
+  const fwd = req.headers.get("x-forwarded-for");
+  if (fwd) return fwd.split(",")[0].trim() || null;
+  return req.headers.get("x-real-ip") || null;
+}
+
+// Server-side free-script gate. Returns either an error Response to short-circuit
+// with, or an authorized context whose `consume()` must be called AFTER a script
+// is successfully generated. This cannot be bypassed from the frontend because
+// the free_scripts_used count is only ever mutated here via the service role.
+async function authorizeFreeScript(req: Request): Promise<
+  | { ok: false; response: Response }
+  | { ok: true; consume: () => Promise<void> }
+> {
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+  const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+    return { ok: false, response: jsonError("Server auth is not configured.", "CONFIG", 500) };
+  }
+
+  const authHeader = req.headers.get("Authorization") || "";
+  const jwt = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (!jwt) {
+    return { ok: false, response: jsonError("Please sign in with Google to generate a script.", "AUTH_REQUIRED", 401) };
+  }
+
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+
+  const { data: userData, error: userErr } = await admin.auth.getUser(jwt);
+  const user = userData?.user;
+  if (userErr || !user) {
+    return { ok: false, response: jsonError("Please sign in with Google to generate a script.", "AUTH_REQUIRED", 401) };
+  }
+
+  const ip = getClientIp(req);
+
+  // Ensure a profile row exists (the signup trigger should have created one).
+  let { data: profile } = await admin
+    .from("profiles")
+    .select("id, email, free_scripts_used, is_paid, signup_ip")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile) {
+    const { data: inserted } = await admin
+      .from("profiles")
+      .insert({ id: user.id, email: user.email })
+      .select("id, email, free_scripts_used, is_paid, signup_ip")
+      .single();
+    profile = inserted;
+  }
+
+  // Paid accounts bypass the free-script gate entirely.
+  if (profile?.is_paid) {
+    return { ok: true, consume: async () => {} };
+  }
+
+  // Already used their one free script.
+  if ((profile?.free_scripts_used ?? 0) >= 1) {
+    return {
+      ok: false,
+      response: jsonError(
+        "You've used your free script. Book a call to unlock unlimited scripts.",
+        "FREE_LIMIT_REACHED",
+        403,
+      ),
+    };
+  }
+
+  // Light anti-abuse: block if the same email or signup IP already burned a free
+  // script on a different account.
+  const orFilters: string[] = [];
+  if (user.email) orFilters.push(`email.eq.${user.email}`);
+  if (ip) orFilters.push(`signup_ip.eq.${ip}`);
+  if (orFilters.length > 0) {
+    const { data: priorUse } = await admin
+      .from("profiles")
+      .select("id")
+      .neq("id", user.id)
+      .gte("free_scripts_used", 1)
+      .or(orFilters.join(","))
+      .limit(1);
+    if (priorUse && priorUse.length > 0) {
+      return {
+        ok: false,
+        response: jsonError(
+          "A free script has already been used from this account or network. Book a call for more.",
+          "ABUSE_BLOCKED",
+          403,
+        ),
+      };
+    }
+  }
+
+  // Authorized. The caller consumes the free script only after a successful write,
+  // via an atomic DB function that can never push the count above 1.
+  return {
+    ok: true,
+    consume: async () => {
+      await admin.rpc("consume_free_script", { p_user_id: user.id, p_ip: ip });
+    },
+  };
+}
 
 interface SupportedClaim {
   claim: string;
@@ -43,9 +155,13 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Enforce the free-script gate BEFORE spending any AI tokens.
+  const gate = await authorizeFreeScript(req);
+  if (!gate.ok) return gate.response;
+
   try {
     const { structure, topic, context_profile, tone_summary, aligned_claims, rag_examples_section } = await req.json();
-    
+
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not configured");
 
@@ -191,8 +307,11 @@ Write the COMPLETE script now.`;
 
     const data = await response.json();
     const script = data.content?.[0]?.text || "";
-    
+
     console.log("Script written, length:", script.length, "chars");
+
+    // Only consume the free script once we actually produced one.
+    await gate.consume();
 
     return new Response(JSON.stringify({ script }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

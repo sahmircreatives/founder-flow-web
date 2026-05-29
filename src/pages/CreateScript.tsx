@@ -13,6 +13,9 @@ import { ChatMessageData } from '@/components/pipeline/ChatMessage';
 import { useScriptWizard } from '@/hooks/useScriptWizard';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { useFreeScript } from '@/hooks/useFreeScript';
+import { SignInGate, FreeScriptStatus } from '@/components/ScriptGate';
 
 const stepLabels = ['Business Context', 'Voice', 'Review'];
 
@@ -95,9 +98,27 @@ function formatStageOutput(stageName: string, data: any): string {
   }
 }
 
+// Edge functions return JSON like { error, code } on non-2xx. supabase-js wraps
+// this in a FunctionsHttpError whose .context holds the original Response, so we
+// dig out the real message (e.g. the free-script gate reason) for the toast.
+async function extractFnError(error: any): Promise<string> {
+  try {
+    const ctx = error?.context;
+    if (ctx && typeof ctx.json === 'function') {
+      const body = await ctx.clone().json();
+      if (body?.error) return body.error as string;
+    }
+  } catch {
+    /* fall through to generic message */
+  }
+  return error?.message || 'Something went wrong. Please try again.';
+}
+
 const CreateScript = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, loading: authLoading, signInWithGoogle, signOut } = useAuth();
+  const freeScript = useFreeScript(user?.id);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRerunning, setIsRerunning] = useState(false);
   const [interactiveMode, setInteractiveMode] = useState(true);
@@ -274,6 +295,11 @@ const CreateScript = () => {
       setWaitingForApproval(true);
       setIsRerunning(false);
 
+      // The free script is consumed server-side once the writing stage succeeds.
+      if (stageName === 'writing') {
+        freeScript.refresh();
+      }
+
       // Add stage output as chat message
       addMessage({
         role: 'assistant',
@@ -285,26 +311,41 @@ const CreateScript = () => {
 
     } catch (error: any) {
       console.error(`Stage ${stageName} error:`, error);
+      const msg = await extractFnError(error);
       toast({
         title: `Stage ${stageIndex}: ${PIPELINE_STAGES[stageIndex].label} failed`,
-        description: error.message || 'Please try again.',
+        description: msg,
         variant: 'destructive',
       });
       setIsRerunning(false);
       setWaitingForApproval(false);
+      freeScript.refresh();
 
       addMessage({
         role: 'assistant',
         stageName: `Stage ${stageIndex}: ${PIPELINE_STAGES[stageIndex].label}`,
         stageNumber: stageIndex,
-        content: `❌ Error: ${error.message || 'Stage failed. Please try again.'}`,
+        content: `❌ Error: ${msg}`,
         type: 'stage-output',
       });
     }
-  }, [businessContext, voiceData, stageOutputs, toast, addMessage]);
+  }, [businessContext, voiceData, stageOutputs, toast, addMessage, freeScript]);
 
   // Start pipeline
   const handleGenerate = async () => {
+    if (!user) {
+      toast({ title: 'Please sign in', description: 'Sign in with Google to generate a script.' });
+      return;
+    }
+    if (!freeScript.canGenerate) {
+      toast({
+        title: 'Free script already used',
+        description: 'Book a call to unlock unlimited scripts.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsGenerating(true);
     setPipelineActive(true);
     setStageOutputs({});
@@ -318,6 +359,8 @@ const CreateScript = () => {
       // Auto mode: run all stages sequentially without pausing
       await runAutoMode();
     }
+    // Reflect server-side consumption in the progress bar.
+    await freeScript.refresh();
     setIsGenerating(false);
   };
 
@@ -441,12 +484,14 @@ const CreateScript = () => {
 
       } catch (error: any) {
         console.error(`Stage ${stageName} error:`, error);
-        toast({ title: `Stage ${i} failed`, description: error.message, variant: 'destructive' });
+        const msg = await extractFnError(error);
+        toast({ title: `Stage ${i} failed`, description: msg, variant: 'destructive' });
+        freeScript.refresh();
         addMessage({
           role: 'assistant',
           stageName: `Stage ${i}: ${PIPELINE_STAGES[i].label}`,
           stageNumber: i,
-          content: `❌ Error: ${error.message || 'Stage failed.'}`,
+          content: `❌ Error: ${msg}`,
           type: 'stage-output',
         });
         return; // Stop auto mode on error
@@ -595,41 +640,60 @@ const CreateScript = () => {
 
       <main className="relative pt-32 pb-20 px-6">
         <div className={pipelineActive ? 'max-w-5xl mx-auto' : 'max-w-2xl mx-auto'}>
-          {!pipelineActive && (
-            <WizardProgress currentStep={currentStep} totalSteps={totalSteps} stepLabels={stepLabels} />
-          )}
-
-          <div className={`${pipelineActive ? '' : 'bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-6 sm:p-8 mb-8 max-h-[60vh] overflow-y-auto'}`}>
-            {pipelineActive ? renderPipeline() : renderStep()}
-          </div>
-
-          {!pipelineActive && (
-            <div className="flex items-center justify-between">
-              <Button
-                variant="outline"
-                onClick={() => currentStep === 1 ? navigate('/') : prevStep()}
-                className="border-border text-foreground hover:bg-secondary"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                {currentStep === 1 ? 'Home' : 'Back'}
-              </Button>
-
-              {currentStep < totalSteps ? (
-                <Button onClick={nextStep} className="gradient-bg text-primary-foreground hover:opacity-90">
-                  Continue
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleGenerate}
-                  disabled={isGenerating}
-                  className="gradient-bg text-primary-foreground hover:opacity-90 glow-orange px-8"
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Generate Script
-                </Button>
-              )}
+          {authLoading ? (
+            <div className="flex justify-center py-16">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
+          ) : !user ? (
+            <SignInGate onSignIn={signInWithGoogle} />
+          ) : (
+            <>
+              {!pipelineActive && (
+                <FreeScriptStatus
+                  email={user.email}
+                  used={freeScript.used}
+                  isPaid={freeScript.isPaid}
+                  onSignOut={signOut}
+                />
+              )}
+
+              {!pipelineActive && (
+                <WizardProgress currentStep={currentStep} totalSteps={totalSteps} stepLabels={stepLabels} />
+              )}
+
+              <div className={`${pipelineActive ? '' : 'bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-6 sm:p-8 mb-8 max-h-[60vh] overflow-y-auto'}`}>
+                {pipelineActive ? renderPipeline() : renderStep()}
+              </div>
+
+              {!pipelineActive && (
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant="outline"
+                    onClick={() => currentStep === 1 ? navigate('/') : prevStep()}
+                    className="border-border text-foreground hover:bg-secondary"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    {currentStep === 1 ? 'Home' : 'Back'}
+                  </Button>
+
+                  {currentStep < totalSteps ? (
+                    <Button onClick={nextStep} className="gradient-bg text-primary-foreground hover:opacity-90">
+                      Continue
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleGenerate}
+                      disabled={isGenerating || !freeScript.canGenerate}
+                      className="gradient-bg text-primary-foreground hover:opacity-90 glow-orange px-8"
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      {freeScript.canGenerate ? 'Generate Script' : 'Free script used'}
+                    </Button>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>

@@ -44,6 +44,36 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          id: string
+          email: string | null
+          free_scripts_used: number
+          is_paid: boolean
+          signup_ip: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          email?: string | null
+          free_scripts_used?: number
+          is_paid?: boolean
+          signup_ip?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string | null
+          free_scripts_used?: number
+          is_paid?: boolean
+          signup_ip?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rag_body_sections: {
         Row: {
           content: string
